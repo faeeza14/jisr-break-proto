@@ -10,8 +10,11 @@ import { SchedulerPage } from './pages/SchedulerPage';
 import { NewPolicyPage } from './pages/NewPolicyPage';
 import { NewTemplatePage } from './pages/NewTemplatePage';
 
+// Strip the trailing slash that Vite's BASE_URL always carries so React Router accepts it.
+const basename = import.meta.env.BASE_URL.replace(/\/$/, '');
+
 const App = () => (
-  <Router>
+  <Router basename={basename}>
     <Routes>
       <Route path="/" element={<Navigate to="/settings/attendance/shifts" replace />} />
       <Route element={<SettingsShell />}>
