@@ -13,9 +13,7 @@ import {
   parseIsoLocal,
   startOfSundayWeek,
 } from '../lib/weekly';
-import { Button } from '../components/primitives/Button';
-import { Card } from '../components/primitives/Card';
-import { Pill } from '../components/primitives/Pill';
+import { Button, Card, CardSection, Tag } from '@jisr-hr/ds-web';
 import { PresetPickerCard } from '../components/PresetPickerCard';
 import { evaluateCompliance } from '../lib/compliance';
 import { deriveSchedule } from '../lib/segments';
@@ -185,16 +183,16 @@ export const SchedulerPage = () => {
               type="button"
               onClick={() => setWeekStart((w) => addDays(w, -7))}
               aria-label="Previous week"
-              className="size-8 inline-flex items-center justify-center hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
+              className="size-8 inline-flex items-center justify-center text-app-ink dark:text-app-ink-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
             >
               <ChevronLeft className="size-4" />
             </button>
-            <span className="px-3 text-13 font-medium">{fmtWeekRange(weekStart)}</span>
+            <span className="px-3 text-13 font-medium text-app-ink dark:text-app-ink-dark">{fmtWeekRange(weekStart)}</span>
             <button
               type="button"
               onClick={() => setWeekStart((w) => addDays(w, 7))}
               aria-label="Next week"
-              className="size-8 inline-flex items-center justify-center hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
+              className="size-8 inline-flex items-center justify-center text-app-ink dark:text-app-ink-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
             >
               <ChevronRight className="size-4" />
             </button>
@@ -205,7 +203,7 @@ export const SchedulerPage = () => {
           <select
             value={groupFilter}
             onChange={(e) => setGroupFilter(e.target.value)}
-            className="field-input h-8 max-w-[220px]"
+            className="h-8 px-2.5 text-13 rounded-md hairline bg-white dark:bg-app-card-dark text-app-ink dark:text-app-ink-dark max-w-[220px] focus:outline-none focus:ring-2 focus:ring-app-ink"
             aria-label="Filter by group"
           >
             <option value="all">All groups</option>
@@ -219,12 +217,13 @@ export const SchedulerPage = () => {
           <Button
             variant="primary"
             size="sm"
+            leadingIcon={<Plus className="size-3.5" />}
             onClick={() => {
               const first = filteredEmployees[0];
               if (first) setSelected({ employeeId: first.id, date: todayIso });
             }}
           >
-            <Plus className="size-3.5" /> Assign
+            Assign
           </Button>
         </div>
 
@@ -249,7 +248,7 @@ export const SchedulerPage = () => {
             className="grid min-w-[800px]"
             style={{ gridTemplateColumns: '180px repeat(7, minmax(80px, 1fr))' }}
           >
-            <div className="px-3 py-2 label-caps border-b-hair border-app-line dark:border-app-line-dark">
+            <div className="px-3 py-2 text-11 tracking-[0.08em] uppercase text-app-faint dark:text-app-faint-dark font-medium border-b border-app-line dark:border-app-line-dark">
               Employee
             </div>
             {days.map((d) => {
@@ -258,7 +257,7 @@ export const SchedulerPage = () => {
               return (
                 <div
                   key={iso}
-                  className={`px-2 py-2 text-center border-b-hair border-app-line dark:border-app-line-dark ${
+                  className={`px-2 py-2 text-center border-b border-app-line dark:border-app-line-dark ${
                     isWeekend(d) ? 'bg-app-subtle/40 dark:bg-app-subtle-dark/30' : ''
                   }`}
                 >
@@ -280,8 +279,8 @@ export const SchedulerPage = () => {
                 key={emp.id}
                 className="contents"
               >
-                <div className="px-3 py-2.5 border-b-hair border-app-line dark:border-app-line-dark">
-                  <div className="text-13 font-medium truncate">{emp.name}</div>
+                <div className="px-3 py-2.5 border-b border-app-line dark:border-app-line-dark">
+                  <div className="text-13 font-medium truncate text-app-ink dark:text-app-ink-dark">{emp.name}</div>
                   <div className="text-11 text-app-faint dark:text-app-faint-dark truncate">
                     {emp.role}
                   </div>
@@ -363,14 +362,16 @@ const StatCard = ({
   tone?: 'green' | 'red';
 }) => (
   <div className="rounded-md bg-app-subtle/60 dark:bg-app-subtle-dark/60 px-4 py-3">
-    <div className="label-caps">{label}</div>
+    <p className="text-11 tracking-[0.08em] uppercase text-app-faint dark:text-app-faint-dark font-medium">
+      {label}
+    </p>
     <div
       className={`mt-1 text-[18px] font-medium ${
         tone === 'red'
           ? 'text-danger-ink dark:text-danger-ink-dark'
           : tone === 'green'
             ? 'text-ok-ink dark:text-ok-ink-dark'
-            : ''
+            : 'text-app-ink dark:text-app-ink-dark'
       }`}
     >
       {value}
@@ -404,7 +405,7 @@ const Cell = ({
   onDrop,
 }: CellProps) => {
   const empty = isOff && !preset;
-  const baseBorder = 'border-b-hair border-app-line dark:border-app-line-dark';
+  const baseBorder = 'border-b border-app-line dark:border-app-line-dark';
   const ring = selected
     ? 'outline outline-2 outline-offset-[-2px] outline-info-ink dark:outline-info-ink-dark'
     : violates
@@ -449,7 +450,7 @@ const Cell = ({
         className={`min-h-[56px] px-2 py-2 text-left ${baseBorder} ${ring} cursor-grab active:cursor-grabbing transition-colors`}
         style={{ borderLeft: `3px solid ${preset.color}`, backgroundColor: colorAlpha }}
       >
-        <div className="text-11 font-medium leading-tight truncate">{preset.nameEn}</div>
+        <div className="text-11 font-medium leading-tight truncate text-app-ink dark:text-app-ink-dark">{preset.nameEn}</div>
         <div className="text-[10px] text-app-mute dark:text-app-mute-dark mt-0.5">
           {preset.startTime} · {Math.round(preset.workDurationMinutes / 60 * 10) / 10}h
         </div>
@@ -490,10 +491,10 @@ const AssignmentPanel = ({
   const isAssigned = currentPresetId !== null;
 
   return (
-    <Card className="!p-4 mt-3">
+    <Card className="mt-3">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-13 font-medium">
+          <div className="text-13 font-medium text-app-ink dark:text-app-ink-dark">
             {employee.name} · {dayName}, {date.toLocaleString('en-US', { month: 'short' })}{' '}
             {date.getDate()}
           </div>
@@ -507,30 +508,31 @@ const AssignmentPanel = ({
           type="button"
           onClick={onClose}
           aria-label="Close panel"
-          className="size-7 inline-flex items-center justify-center rounded-md hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
+          className="size-7 inline-flex items-center justify-center rounded-md text-app-mute dark:text-app-mute-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
         >
           <X className="size-4" />
         </button>
       </div>
 
-      <div className="label-caps mt-4 mb-2">Pick a shift preset</div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-        {presets.map((p) => {
-          const sched = deriveSchedule(p, breakPolicies);
-          const hards = hardViolationsOn(p, date, breakPolicies, employee);
-          const warning = hards[0] ? violationLabel(hards[0].ruleId) : undefined;
-          return (
-            <PresetPickerCard
-              key={p.id}
-              preset={p}
-              endMin={sched.endMin}
-              selected={p.id === currentPresetId}
-              warning={warning}
-              onClick={() => onPick(p.id)}
-            />
-          );
-        })}
-      </div>
+      <CardSection title="Pick a shift preset" className="mt-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+          {presets.map((p) => {
+            const sched = deriveSchedule(p, breakPolicies);
+            const hards = hardViolationsOn(p, date, breakPolicies, employee);
+            const warning = hards[0] ? violationLabel(hards[0].ruleId) : undefined;
+            return (
+              <PresetPickerCard
+                key={p.id}
+                preset={p}
+                endMin={sched.endMin}
+                selected={p.id === currentPresetId}
+                warning={warning}
+                onClick={() => onPick(p.id)}
+              />
+            );
+          })}
+        </div>
+      </CardSection>
 
       <div className="mt-4 flex flex-wrap gap-2">
         {isAssigned && (
@@ -553,7 +555,9 @@ const AssignmentPanel = ({
       </div>
 
       <div className="mt-3 hidden sm:block">
-        <Pill tone="neutral">Tip · drag any assigned cell to move it; drop on another employee&apos;s cell to swap.</Pill>
+        <Tag appearance="neutral" size="sm">
+          Tip · drag any assigned cell to move it; drop on another employee&apos;s cell to swap.
+        </Tag>
       </div>
     </Card>
   );

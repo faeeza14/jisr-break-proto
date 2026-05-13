@@ -1,14 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { nanoid } from 'nanoid';
-import { ArrowUpRight, CalendarRange, CheckCircle2, Pencil, Plus, ShieldAlert } from 'lucide-react';
+import { ArrowUpRight, CalendarRange, CheckCircle2, History, Pencil, Plus, ShieldAlert } from 'lucide-react';
 
-import { Breadcrumb } from '../components/PageHeader';
-import { Card, CardSectionLabel } from '../components/primitives/Card';
-import { Pill } from '../components/primitives/Pill';
-import { Button } from '../components/primitives/Button';
-import { Field } from '../components/primitives/Field';
-import { Chip } from '../components/primitives/Chip';
+import {
+  PageHeader,
+  SmartBreadcrumb,
+  Card,
+  CardSection,
+  Button,
+  Field,
+  Input,
+  Tag,
+  Banner,
+  useToast,
+} from '@jisr-hr/ds-web';
 import { Timeline, TimelineLegend } from '../components/timeline/Timeline';
 import { BreakSheet } from '../components/BreakSheet';
 import { OverrideModal } from '../components/OverrideModal';
@@ -20,7 +26,6 @@ import { evaluateCompliance } from '../lib/compliance';
 import { deriveSchedule } from '../lib/segments';
 import { fmt12h, fmtDuration, fmtHHMM, isHeatBanDate, parseHHMM } from '../lib/time';
 import type { BreakInstance, ShiftPreset, WorkEnvironment } from '../types';
-import { History } from 'lucide-react';
 
 const COLOR_SWATCHES = ['#D58A2F', '#2F9C95', '#C26B7E', '#6B5BD4', '#1F4F8E'];
 
@@ -63,6 +68,7 @@ export const PresetDetail = () => {
   const { id = 'cc' } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const toast = useToast();
   const isNewRoute = location.pathname.endsWith('/presets/new');
   const {
     presets,
@@ -99,7 +105,6 @@ export const PresetDetail = () => {
     editing: null,
   });
   const [overridden, setOverridden] = useState(false);
-  const [savedNote, setSavedNote] = useState<string | null>(null);
   const [diffOpen, setDiffOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
 
@@ -150,7 +155,6 @@ export const PresetDetail = () => {
   const hardCount = hardViolations.length;
   const softCount = compliance.violations.filter((v) => v.severity === 'soft').length;
 
-  // Compliance count BEFORE the in-progress edits (the snapshot baseline).
   const baselineHard = snapshotRef.current
     ? evaluateCompliance({
         preset: snapshotRef.current,
@@ -181,20 +185,18 @@ export const PresetDetail = () => {
     });
     snapshotRef.current = structuredClone(preset);
     setDiffOpen(false);
-    setSavedNote(`Preset saved · ${cellsAffected} cells updated`);
-    setTimeout(() => setSavedNote(null), 2200);
+    toast.success('Preset saved', `${cellsAffected} cells updated.`);
   };
-  const headerPill =
+
+  const headerStatus =
     hardCount > 0 ? (
-      <Pill tone="red" className="gap-1.5">
-        <ShieldAlert className="size-3" />
+      <Tag appearance="danger" size="md" leadingIcon={<ShieldAlert className="size-3" />}>
         {hardCount} compliance issue{hardCount === 1 ? '' : 's'}
-      </Pill>
+      </Tag>
     ) : (
-      <Pill tone="green" className="gap-1.5">
-        <CheckCircle2 className="size-3" />
+      <Tag appearance="success" size="md" leadingIcon={<CheckCircle2 className="size-3" />}>
         Compliant{softCount > 0 ? ` · ${softCount} note${softCount === 1 ? '' : 's'}` : ''}
-      </Pill>
+      </Tag>
     );
 
   const onSaveBreak = (b: BreakInstance) => {
@@ -206,38 +208,35 @@ export const PresetDetail = () => {
 
   return (
     <div className="pb-12">
-      <div className="px-5 sm:px-6 pt-5 pb-3">
-        <Breadcrumb
-          items={[
-            { label: 'Settings', to: '/settings' },
-            { label: 'Attendance' },
-            { label: 'Shifts & scheduling', to: '/settings/attendance/shifts' },
-            { label: 'Shift presets', to: '/settings/attendance/shifts' },
-            { label: preset.nameEn },
-          ]}
-        />
-        <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 className="text-[18px] font-medium leading-tight">{preset.nameEn}</h1>
-            <p className="text-13 text-app-mute dark:text-app-mute-dark mt-0.5">
-              Shift preset · Used in {preset.usedInTemplateIds.length} template
-              {preset.usedInTemplateIds.length === 1 ? '' : 's'}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
+      <PageHeader
+        breadcrumb={
+          <SmartBreadcrumb
+            items={[
+              { label: 'Settings', to: '/settings' },
+              { label: 'Attendance' },
+              { label: 'Shifts & scheduling', to: '/settings/attendance/shifts' },
+              { label: 'Shift presets', to: '/settings/attendance/shifts' },
+              { label: preset.nameEn },
+            ]}
+          />
+        }
+        title={preset.nameEn}
+        description={`Shift preset · Used in ${preset.usedInTemplateIds.length} template${preset.usedInTemplateIds.length === 1 ? '' : 's'}`}
+        border={false}
+        actions={
+          <>
             <div className="inline-flex items-center gap-1.5 hairline rounded-md px-2 h-9 bg-white dark:bg-app-card-dark">
               <CalendarRange className="size-3.5 text-app-faint" />
               <input
                 type="date"
                 value={ui.currentDate}
                 onChange={(e) => setDate(e.target.value)}
-                className="bg-transparent text-13 focus:outline-none"
+                className="bg-transparent text-13 focus:outline-none text-app-ink dark:text-app-ink-dark"
                 aria-label="Current date"
               />
             </div>
-            {headerPill}
-            <Button variant="secondary" size="md" onClick={() => setHistoryOpen(true)}>
-              <History className="size-3.5" />
+            {headerStatus}
+            <Button variant="secondary" onClick={() => setHistoryOpen(true)} leadingIcon={<History className="size-3.5" />}>
               History
             </Button>
             <Button
@@ -245,7 +244,6 @@ export const PresetDetail = () => {
               disabled={!isDirty}
               onClick={() => {
                 if (snapshotRef.current) replacePreset(preset.id, structuredClone(snapshotRef.current));
-                setSavedNote(null);
                 setOverridden(false);
               }}
             >
@@ -256,172 +254,170 @@ export const PresetDetail = () => {
               disabled={!isDirty}
               onClick={() => setDiffOpen(true)}
             >
-              {savedNote ?? 'Save'}
+              Save
             </Button>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <div className="px-5 sm:px-6 grid lg:grid-cols-[minmax(0,1fr)_320px] gap-4 max-w-[1200px]">
         <div className="space-y-4 min-w-0">
           <Card>
-            <CardSectionLabel>Shift details</CardSectionLabel>
-            <div className="grid sm:grid-cols-2 gap-3">
-              <Field label="Name in English">
-                <input
-                  className="field-input"
-                  value={preset.nameEn}
-                  onChange={(e) => updatePreset(preset.id, { nameEn: e.target.value })}
-                />
-              </Field>
-              <Field label="Name in Arabic">
-                <input
-                  dir="rtl"
-                  className="field-input text-right"
-                  value={preset.nameAr}
-                  onChange={(e) => updatePreset(preset.id, { nameAr: e.target.value })}
-                />
-              </Field>
-            </div>
-            <div className="grid sm:grid-cols-2 gap-3 mt-3">
-              <Field label="Color">
-                <div className="flex items-center gap-2">
-                  {COLOR_SWATCHES.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      aria-label={`Color ${c}`}
-                      onClick={() => updatePreset(preset.id, { color: c })}
-                      className={`size-7 rounded-md transition ${
-                        preset.color === c
-                          ? 'ring-2 ring-offset-2 ring-app-ink dark:ring-app-ink-dark dark:ring-offset-app-card-dark'
-                          : 'hairline'
-                      }`}
-                      style={{ backgroundColor: c }}
-                    />
-                  ))}
-                </div>
-              </Field>
-              <Field
-                label="Work environment"
-                badge={<Chip tone="info">New</Chip>}
-                hint="Drives heat-ban compliance for the KSA outdoor work rule."
-              >
-                <select
-                  className="field-input"
-                  value={preset.workEnvironment}
-                  onChange={(e) =>
-                    updatePreset(preset.id, { workEnvironment: e.target.value as WorkEnvironment })
-                  }
-                >
-                  <option value="indoor">Indoor</option>
-                  <option value="outdoor">Outdoor</option>
-                  <option value="mixed">Mixed</option>
-                </select>
-              </Field>
-            </div>
-          </Card>
-
-          <Card>
-            <CardSectionLabel>Schedule</CardSectionLabel>
-            <div className="grid sm:grid-cols-2 gap-3">
-              <Field label="Start work at">
-                <input
-                  type="time"
-                  className="field-input"
-                  value={preset.startTime}
-                  onChange={(e) => updatePreset(preset.id, { startTime: e.target.value })}
-                />
-              </Field>
-              <Field
-                label="Should work for"
-                hint={`Shift ends ${fmt12h(sched.endMin)} (${fmtDuration(preset.workDurationMinutes)} work + ${fmtDuration(sched.totalBreakMin)} break)`}
-              >
-                <input
-                  className="field-input"
-                  value={fmtHHMM(preset.workDurationMinutes)}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (/^\d{1,2}:\d{2}$/.test(v)) {
-                      updatePreset(preset.id, { workDurationMinutes: parseHHMM(v) });
-                    }
-                  }}
-                />
-              </Field>
-            </div>
-
-            <div className="mt-5">
-              <div className="flex items-center justify-between mb-2">
-                <span className="label-caps">Live preview</span>
-                {savedNote && <Pill tone="green">{savedNote}</Pill>}
-              </div>
-              <Timeline
-                schedule={sched}
-                showHeatBan={heatBanActive}
-                showViolations={showViolations}
-                flexibleBreaks={flexibleBreaksRender}
-              />
-              <TimelineLegend showHeatBan={heatBanActive} showViolation={showViolations} />
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
-              <Metric label="Work hours" value={fmtDuration(sched.totalWorkMin)} />
-              <Metric label="Break" value={fmtDuration(sched.totalBreakMin)} />
-              <Metric
-                label="Daily presence"
-                value={fmtDuration(sched.presenceMin)}
-                tone={sched.presenceMin > 12 * 60 ? 'danger' : undefined}
-              />
-              <Metric
-                label="Auto OT after"
-                value={otPolicy?.autoOvertimeAfterMinutes ? fmtDuration(otPolicy.autoOvertimeAfterMinutes) : '—'}
-              />
-            </div>
-
-            {firstHard && !overridden && (
-              <Card tone="danger" className="mt-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <ShieldAlert className="size-4 text-danger-ink dark:text-danger-ink-dark" />
-                      <span className="text-13 font-medium text-danger-ink dark:text-danger-ink-dark">
-                        Compliance violation
-                      </span>
-                    </div>
-                    <p className="text-13 mt-1.5">{firstHard.message}</p>
-                    <p className="text-11 text-app-mute dark:text-app-mute-dark mt-1">{firstHard.citation}</p>
-                  </div>
-                </div>
-
-                {firstHard.suggestedFix && (
-                  <SuggestedFix
-                    fix={firstHard.suggestedFix}
-                    onApply={() => replacePreset(preset.id, firstHard.suggestedFix!)}
-                    onOverride={() => setOverrideOpen(true)}
+            <CardSection title="Shift details">
+              <div className="grid sm:grid-cols-2 gap-3">
+                <Field label="Name in English">
+                  <Input
+                    value={preset.nameEn}
+                    onChange={(e) => updatePreset(preset.id, { nameEn: e.target.value })}
                   />
-                )}
-              </Card>
-            )}
-
-            {overridden && (
-              <div className="mt-5 rounded-md hairline bg-warn-bg/40 dark:bg-warn-bg-dark/30 p-3 text-13 flex items-center justify-between">
-                <span>Compliance violations overridden — audit logged.</span>
-                <Button variant="ghost" size="sm" onClick={() => setOverridden(false)}>
-                  Re-evaluate
-                </Button>
+                </Field>
+                <Field label="Name in Arabic">
+                  <Input
+                    dir="rtl"
+                    className="text-right"
+                    value={preset.nameAr}
+                    onChange={(e) => updatePreset(preset.id, { nameAr: e.target.value })}
+                  />
+                </Field>
               </div>
-            )}
+              <div className="grid sm:grid-cols-2 gap-3 mt-3">
+                <Field label="Color">
+                  <div className="flex items-center gap-2">
+                    {COLOR_SWATCHES.map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        aria-label={`Color ${c}`}
+                        onClick={() => updatePreset(preset.id, { color: c })}
+                        className={`size-7 rounded-md transition ${
+                          preset.color === c
+                            ? 'ring-2 ring-offset-2 ring-app-ink dark:ring-app-ink-dark dark:ring-offset-app-card-dark'
+                            : 'hairline'
+                        }`}
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
+                  </div>
+                </Field>
+                <Field
+                  label="Work environment"
+                  description="Drives heat-ban compliance for the KSA outdoor work rule."
+                >
+                  <select
+                    className="w-full h-9 px-3 text-13 rounded-lg hairline bg-white dark:bg-app-card-dark text-app-ink dark:text-app-ink-dark focus:outline-none focus:ring-2 focus:ring-app-ink"
+                    value={preset.workEnvironment}
+                    onChange={(e) =>
+                      updatePreset(preset.id, { workEnvironment: e.target.value as WorkEnvironment })
+                    }
+                  >
+                    <option value="indoor">Indoor</option>
+                    <option value="outdoor">Outdoor</option>
+                    <option value="mixed">Mixed</option>
+                  </select>
+                </Field>
+              </div>
+            </CardSection>
           </Card>
 
           <Card>
-            <div className="flex items-center justify-between">
-              <CardSectionLabel>Breaks</CardSectionLabel>
+            <CardSection title="Schedule">
+              <div className="grid sm:grid-cols-2 gap-3">
+                <Field label="Start work at">
+                  <Input
+                    type="time"
+                    value={preset.startTime}
+                    onChange={(e) => updatePreset(preset.id, { startTime: e.target.value })}
+                  />
+                </Field>
+                <Field
+                  label="Should work for"
+                  description={`Shift ends ${fmt12h(sched.endMin)} (${fmtDuration(preset.workDurationMinutes)} work + ${fmtDuration(sched.totalBreakMin)} break)`}
+                >
+                  <Input
+                    value={fmtHHMM(preset.workDurationMinutes)}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (/^\d{1,2}:\d{2}$/.test(v)) {
+                        updatePreset(preset.id, { workDurationMinutes: parseHHMM(v) });
+                      }
+                    }}
+                  />
+                </Field>
+              </div>
+
+              <div className="mt-5">
+                <p className="text-11 tracking-[0.08em] uppercase text-app-faint dark:text-app-faint-dark font-medium mb-2">
+                  Live preview
+                </p>
+                <Timeline
+                  schedule={sched}
+                  showHeatBan={heatBanActive}
+                  showViolations={showViolations}
+                  flexibleBreaks={flexibleBreaksRender}
+                />
+                <TimelineLegend showHeatBan={heatBanActive} showViolation={showViolations} />
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
+                <Metric label="Work hours" value={fmtDuration(sched.totalWorkMin)} />
+                <Metric label="Break" value={fmtDuration(sched.totalBreakMin)} />
+                <Metric
+                  label="Daily presence"
+                  value={fmtDuration(sched.presenceMin)}
+                  tone={sched.presenceMin > 12 * 60 ? 'danger' : undefined}
+                />
+                <Metric
+                  label="Auto OT after"
+                  value={otPolicy?.autoOvertimeAfterMinutes ? fmtDuration(otPolicy.autoOvertimeAfterMinutes) : '—'}
+                />
+              </div>
+
+              {firstHard && !overridden && (
+                <div className="mt-5">
+                  <Banner appearance="danger" emphasis="mid" title="Compliance violation">
+                    {firstHard.message} — {firstHard.citation}
+                  </Banner>
+                  {firstHard.suggestedFix && (
+                    <SuggestedFix
+                      fix={firstHard.suggestedFix}
+                      onApply={() => replacePreset(preset.id, firstHard.suggestedFix!)}
+                      onOverride={() => setOverrideOpen(true)}
+                    />
+                  )}
+                </div>
+              )}
+
+              {overridden && (
+                <div className="mt-5">
+                  <Banner
+                    appearance="warning"
+                    emphasis="mid"
+                    title="Compliance violations overridden"
+                    actions={
+                      <Button variant="ghost" size="sm" onClick={() => setOverridden(false)}>
+                        Re-evaluate
+                      </Button>
+                    }
+                  >
+                    Audit logged.
+                  </Banner>
+                </div>
+              )}
+            </CardSection>
+          </Card>
+
+          <Card>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-11 tracking-[0.08em] uppercase text-app-faint dark:text-app-faint-dark font-medium">
+                Breaks
+              </p>
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={() => setBreakSheet({ open: true, editing: null })}
+                leadingIcon={<Plus className="size-3.5" />}
               >
-                <Plus className="size-3.5" /> Add break
+                Add break
               </Button>
             </div>
             <ul className="space-y-2">
@@ -433,8 +429,12 @@ export const PresetDetail = () => {
               {preset.breaks.map((b) => {
                 const policy = policyMap[b.breakPolicyId];
                 const dot =
-                  b.scheduleType === 'fixed' ? 'bg-app-ink dark:bg-app-ink-dark' : b.scheduleType === 'flexible' ? 'border-2 border-app-ink dark:border-app-ink-dark' : 'bg-gradient-to-r from-app-ink to-transparent';
-                const sched =
+                  b.scheduleType === 'fixed'
+                    ? 'bg-app-ink dark:bg-app-ink-dark'
+                    : b.scheduleType === 'flexible'
+                      ? 'border-2 border-app-ink dark:border-app-ink-dark'
+                      : 'bg-gradient-to-r from-app-ink to-transparent';
+                const schedLabel =
                   b.scheduleType === 'fixed'
                     ? `at ${b.fixedTime}`
                     : b.scheduleType === 'flexible'
@@ -447,18 +447,18 @@ export const PresetDetail = () => {
                   >
                     <span className={`size-2 rounded-full shrink-0 ${dot}`} />
                     <div className="flex-1 min-w-0">
-                      <div className="text-13 font-medium truncate">{b.name}</div>
+                      <div className="text-13 font-medium truncate text-app-ink dark:text-app-ink-dark">{b.name}</div>
                       <div className="text-11 text-app-mute dark:text-app-mute-dark">
-                        {policy?.name ?? '—'} · {b.paidOverride ? 'paid' : (policy?.paid ?? 'unpaid')} · {sched}
+                        {policy?.name ?? '—'} · {b.paidOverride ? 'paid' : (policy?.paid ?? 'unpaid')} · {schedLabel}
                       </div>
                     </div>
-                    <Chip tone="gray">{fmtDuration(b.durationMinutes)}</Chip>
+                    <Tag appearance="neutral" size="sm">{fmtDuration(b.durationMinutes)}</Tag>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setBreakSheet({ open: true, editing: b })}
+                      leadingIcon={<Pencil className="size-3.5" />}
                     >
-                      <Pencil className="size-3.5" />
                       Edit
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => removeBreak(preset.id, b.id)}>
@@ -475,7 +475,9 @@ export const PresetDetail = () => {
 
           <Card>
             <div className="flex items-baseline justify-between gap-2 mb-3">
-              <CardSectionLabel>Linked attendance policies</CardSectionLabel>
+              <p className="text-11 tracking-[0.08em] uppercase text-app-faint dark:text-app-faint-dark font-medium">
+                Linked attendance policies
+              </p>
               <span className="text-11 text-app-mute dark:text-app-mute-dark">
                 Configured in{' '}
                 <Link
@@ -515,53 +517,62 @@ export const PresetDetail = () => {
           </Card>
 
           <Card>
-            <CardSectionLabel>Used in templates</CardSectionLabel>
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-13 text-app-mute dark:text-app-mute-dark">
-                {usedTemplates.length === 0
-                  ? 'This preset is not yet used in any template.'
-                  : `This preset is part of ${usedTemplates.length} template${usedTemplates.length === 1 ? '' : 's'} · ${usedTemplates.join(', ')}`}
-              </p>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => navigate('/settings/attendance/shifts')}
-              >
-                View templates
-              </Button>
-            </div>
+            <CardSection title="Used in templates">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-13 text-app-mute dark:text-app-mute-dark">
+                  {usedTemplates.length === 0
+                    ? 'This preset is not yet used in any template.'
+                    : `This preset is part of ${usedTemplates.length} template${usedTemplates.length === 1 ? '' : 's'} · ${usedTemplates.join(', ')}`}
+                </p>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => navigate('/settings/attendance/shifts')}
+                >
+                  View templates
+                </Button>
+              </div>
+            </CardSection>
           </Card>
         </div>
 
         <aside className="space-y-4 lg:sticky lg:top-4 self-start">
           <Card>
-            <CardSectionLabel>Compliance summary</CardSectionLabel>
-            <div className="space-y-2">
-              {compliance.violations.length === 0 && (
-                <div className="text-13 text-app-mute dark:text-app-mute-dark">
-                  No applicable issues for the selected date.
-                </div>
-              )}
-              {compliance.violations.map((v) => (
-                <div
-                  key={v.ruleId}
-                  className={`rounded-md hairline p-2.5 text-13 ${v.severity === 'hard' ? 'bg-danger-bg/30 dark:bg-danger-bg-dark/20' : 'bg-warn-bg/40 dark:bg-warn-bg-dark/30'}`}
-                >
-                  <div className="flex items-center gap-2">
-                    <Pill tone={v.severity === 'hard' ? 'red' : 'amber'}>{v.severity === 'hard' ? 'Hard' : 'Soft'}</Pill>
-                    <span className="text-11 text-app-mute dark:text-app-mute-dark">{v.ruleId}</span>
+            <CardSection title="Compliance summary">
+              <div className="space-y-2">
+                {compliance.violations.length === 0 && (
+                  <div className="text-13 text-app-mute dark:text-app-mute-dark">
+                    No applicable issues for the selected date.
                   </div>
-                  <p className="mt-1">{v.message}</p>
-                </div>
-              ))}
-            </div>
+                )}
+                {compliance.violations.map((v) => (
+                  <div
+                    key={v.ruleId}
+                    className={`rounded-md hairline p-2.5 text-13 ${
+                      v.severity === 'hard'
+                        ? 'bg-danger-bg/30 dark:bg-danger-bg-dark/20'
+                        : 'bg-warn-bg/40 dark:bg-warn-bg-dark/30'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Tag appearance={v.severity === 'hard' ? 'danger' : 'warning'} size="sm">
+                        {v.severity === 'hard' ? 'Hard' : 'Soft'}
+                      </Tag>
+                      <span className="text-11 text-app-mute dark:text-app-mute-dark">{v.ruleId}</span>
+                    </div>
+                    <p className="mt-1 text-app-ink dark:text-app-ink-dark">{v.message}</p>
+                  </div>
+                ))}
+              </div>
+            </CardSection>
           </Card>
           <Card>
-            <CardSectionLabel>Demo notes</CardSectionLabel>
-            <p className="text-13 text-app-mute dark:text-app-mute-dark">
-              Heat ban applies for outdoor / mixed environments between 15 Jun and 15 Sep.
-              Use the date picker to scrub to {ui.currentDate}.
-            </p>
+            <CardSection title="Demo notes">
+              <p className="text-13 text-app-mute dark:text-app-mute-dark">
+                Heat ban applies for outdoor / mixed environments between 15 Jun and 15 Sep.
+                Use the date picker to scrub to {ui.currentDate}.
+              </p>
+            </CardSection>
           </Card>
         </aside>
       </div>
@@ -631,9 +642,17 @@ const Metric = ({
   value: string;
   tone?: 'danger';
 }) => (
-  <div className={`rounded-md hairline p-3 ${tone === 'danger' ? 'bg-danger-bg/30 dark:bg-danger-bg-dark/30' : 'bg-app-subtle/40 dark:bg-app-subtle-dark/40'}`}>
-    <div className="label-caps">{label}</div>
-    <div className="mt-1 text-13 font-medium">{value}</div>
+  <div
+    className={`rounded-md hairline p-3 ${
+      tone === 'danger'
+        ? 'bg-danger-bg/30 dark:bg-danger-bg-dark/30'
+        : 'bg-app-subtle/40 dark:bg-app-subtle-dark/40'
+    }`}
+  >
+    <p className="text-11 tracking-[0.08em] uppercase text-app-faint dark:text-app-faint-dark font-medium">
+      {label}
+    </p>
+    <div className="mt-1 text-13 font-medium text-app-ink dark:text-app-ink-dark">{value}</div>
   </div>
 );
 
@@ -654,11 +673,11 @@ const PolicyRow = ({
 }) => (
   <div className="py-3 first:pt-0 last:pb-0 grid sm:grid-cols-[minmax(0,1fr)_220px_auto] gap-3 items-center">
     <div className="min-w-0">
-      <div className="text-13 font-medium">{title}</div>
+      <div className="text-13 font-medium text-app-ink dark:text-app-ink-dark">{title}</div>
       <div className="text-11 text-app-mute dark:text-app-mute-dark mt-0.5 truncate">{meta}</div>
     </div>
     <select
-      className="field-input"
+      className="w-full h-9 px-3 text-13 rounded-lg hairline bg-white dark:bg-app-card-dark text-app-ink dark:text-app-ink-dark focus:outline-none focus:ring-2 focus:ring-app-ink"
       value={value}
       onChange={(e) => onChange(e.target.value)}
     >
@@ -670,7 +689,7 @@ const PolicyRow = ({
     </select>
     <Link
       to={configureTo}
-      className="inline-flex items-center justify-center gap-1 h-9 px-3 rounded-lg hairline bg-white dark:bg-app-card-dark text-13 hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
+      className="inline-flex items-center justify-center gap-1 h-9 px-3 rounded-lg hairline bg-white dark:bg-app-card-dark text-13 text-app-ink dark:text-app-ink-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
     >
       Configure
       <ArrowUpRight className="size-3.5" />
@@ -691,7 +710,9 @@ const SuggestedFix = ({
   const sched = deriveSchedule(fix, breakPolicies);
   return (
     <div className="mt-3 rounded-md bg-white dark:bg-app-card-dark hairline p-3">
-      <div className="label-caps mb-2">Suggested fix · split shift</div>
+      <p className="text-11 tracking-[0.08em] uppercase text-app-faint dark:text-app-faint-dark font-medium mb-2">
+        Suggested fix · split shift
+      </p>
       <Timeline
         schedule={sched}
         showHeatBan
@@ -699,7 +720,8 @@ const SuggestedFix = ({
         flexibleBreaks={[]}
       />
       <div className="mt-2 text-11 text-app-mute dark:text-app-mute-dark">
-        {fmt12h(sched.startMin)} – {fmt12h(sched.endMin)} · {fmtDuration(sched.totalWorkMin)} work · {fmtDuration(sched.totalBreakMin)} mandated paid break
+        {fmt12h(sched.startMin)} – {fmt12h(sched.endMin)} · {fmtDuration(sched.totalWorkMin)} work ·{' '}
+        {fmtDuration(sched.totalBreakMin)} mandated paid break
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
         <Button variant="primary" size="sm" onClick={onApply}>

@@ -1,10 +1,16 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { nanoid } from 'nanoid';
-import { Breadcrumb } from '../components/PageHeader';
-import { Card, CardSectionLabel } from '../components/primitives/Card';
-import { Button } from '../components/primitives/Button';
-import { Field } from '../components/primitives/Field';
+import {
+  PageHeader,
+  SmartBreadcrumb,
+  Card,
+  CardSection,
+  Button,
+  Field,
+  Input,
+  useToast,
+} from '@jisr-hr/ds-web';
 import { StepIndicator } from '../components/StepIndicator';
 import { PresetPickerCard } from '../components/PresetPickerCard';
 import { ComplianceSummaryCard } from '../components/ComplianceSummaryCard';
@@ -48,12 +54,12 @@ const blankDraft = (): Draft => ({
 
 export const NewTemplatePage = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const { presets, breakPolicies, createTemplate } = useAppStore();
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<Draft>(blankDraft);
   const [activeWeekDay, setActiveWeekDay] = useState<number | null>(null);
   const [activeRotationCell, setActiveRotationCell] = useState<{ week: number; day: number } | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
 
   const presetList = useMemo(() => Object.values(presets), [presets]);
   const weekStart = startOfSundayWeek(parseIsoLocal(TODAY_ISO));
@@ -103,8 +109,8 @@ export const NewTemplatePage = () => {
         : {}),
     };
     createTemplate(tpl);
-    setToast(`Template '${tpl.name}' created`);
-    setTimeout(() => navigate('/settings/attendance/shifts/settings'), 600);
+    toast.success('Template created', `'${tpl.name}' is ready.`);
+    setTimeout(() => navigate('/settings/attendance/shifts/settings'), 500);
   };
 
   const summarySlots = useMemo(() => {
@@ -129,21 +135,22 @@ export const NewTemplatePage = () => {
 
   return (
     <div className="pb-12">
-      <div className="px-5 sm:px-6 pt-5 pb-3">
-        <Breadcrumb
-          items={[
-            { label: 'Settings', to: '/settings' },
-            { label: 'Attendance' },
-            { label: 'Shifts & scheduling', to: '/settings/attendance/shifts' },
-            { label: 'Templates', to: '/settings/attendance/shifts/settings' },
-            { label: 'New template' },
-          ]}
-        />
-        <h1 className="mt-2 text-[18px] font-medium">New template</h1>
-        <p className="text-13 text-app-mute dark:text-app-mute-dark">
-          Compose a weekly or rotating pattern of shift presets.
-        </p>
-      </div>
+      <PageHeader
+        breadcrumb={
+          <SmartBreadcrumb
+            items={[
+              { label: 'Settings', to: '/settings' },
+              { label: 'Attendance' },
+              { label: 'Shifts & scheduling', to: '/settings/attendance/shifts' },
+              { label: 'Templates', to: '/settings/attendance/shifts/settings' },
+              { label: 'New template' },
+            ]}
+          />
+        }
+        title="New template"
+        description="Compose a weekly or rotating pattern of shift presets."
+        border={false}
+      />
 
       <div className="px-5 sm:px-6 max-w-3xl space-y-4">
         <Card>
@@ -152,134 +159,137 @@ export const NewTemplatePage = () => {
 
         {step === 0 && (
           <Card>
-            <CardSectionLabel>Pick a template type</CardSectionLabel>
-            <div className="grid sm:grid-cols-3 gap-3">
-              <TypeCard
-                title="Day template"
-                description="One preset that repeats on the chosen workdays."
-                example="Office staff on Sun–Thu, all running 09:00–17:00."
-                selected={draft.type === 'day'}
-                onClick={() => update({ type: 'day' })}
-              />
-              <TypeCard
-                title="Week template"
-                description="Different presets on different weekdays."
-                example="Reception runs early shift Sun–Wed, late shift Thu."
-                selected={draft.type === 'week'}
-                onClick={() => update({ type: 'week' })}
-              />
-              <TypeCard
-                title="Rotation template"
-                description="Multi-week cycle, e.g. 4-on-3-off or alternating shifts."
-                example="Maintenance crew rotates day/night every 2 weeks."
-                selected={draft.type === 'rotation'}
-                onClick={() => update({ type: 'rotation' })}
-              />
-            </div>
+            <CardSection title="Pick a template type">
+              <div className="grid sm:grid-cols-3 gap-3">
+                <TypeCard
+                  title="Day template"
+                  description="One preset that repeats on the chosen workdays."
+                  example="Office staff on Sun–Thu, all running 09:00–17:00."
+                  selected={draft.type === 'day'}
+                  onClick={() => update({ type: 'day' })}
+                />
+                <TypeCard
+                  title="Week template"
+                  description="Different presets on different weekdays."
+                  example="Reception runs early shift Sun–Wed, late shift Thu."
+                  selected={draft.type === 'week'}
+                  onClick={() => update({ type: 'week' })}
+                />
+                <TypeCard
+                  title="Rotation template"
+                  description="Multi-week cycle, e.g. 4-on-3-off or alternating shifts."
+                  example="Maintenance crew rotates day/night every 2 weeks."
+                  selected={draft.type === 'rotation'}
+                  onClick={() => update({ type: 'rotation' })}
+                />
+              </div>
+            </CardSection>
           </Card>
         )}
 
         {step === 1 && (
           <Card>
-            <CardSectionLabel>Details</CardSectionLabel>
-            <div className="space-y-3">
-              <Field label="Template name">
-                <input
-                  className="field-input"
-                  value={draft.name}
-                  onChange={(e) => update({ name: e.target.value })}
-                  placeholder="Office Sun–Thu"
-                  autoFocus
-                />
-              </Field>
-              <Field label="Type">
-                <div className="text-13 text-app-mute dark:text-app-mute-dark">
-                  {draft.type === 'day' ? 'Day template' : draft.type === 'week' ? 'Week template' : 'Rotation template'}
-                </div>
-              </Field>
-              {(draft.type === 'day' || draft.type === 'week') && (
-                <Field label="Workdays" hint="Days marked off skip automatically.">
-                  <div className="flex gap-1.5 flex-wrap">
-                    {DAY_NAMES.map((name, i) => {
-                      const on = draft.daysOfWeek.includes(i);
-                      return (
-                        <button
-                          key={i}
-                          type="button"
-                          onClick={() => toggleWorkday(i)}
-                          className={`px-3 py-1.5 rounded-md text-13 hairline ${
-                            on
-                              ? 'bg-app-ink text-white border-app-ink dark:bg-app-ink-dark dark:text-app-ink'
-                              : 'bg-white dark:bg-app-card-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark'
-                          }`}
-                        >
-                          {name}
-                        </button>
-                      );
-                    })}
+            <CardSection title="Details">
+              <div className="space-y-3">
+                <Field label="Template name">
+                  <Input
+                    value={draft.name}
+                    onChange={(e) => update({ name: e.target.value })}
+                    placeholder="Office Sun–Thu"
+                    autoFocus
+                  />
+                </Field>
+                <Field label="Type">
+                  <div className="text-13 text-app-mute dark:text-app-mute-dark">
+                    {draft.type === 'day' ? 'Day template' : draft.type === 'week' ? 'Week template' : 'Rotation template'}
                   </div>
                 </Field>
-              )}
-              {draft.type === 'rotation' && (
-                <div className="grid sm:grid-cols-2 gap-3">
-                  <Field label="Cycle length">
-                    <select
-                      className="field-input"
-                      value={draft.rotationCycleWeeks}
-                      onChange={(e) => setRotationLength(Number(e.target.value))}
-                    >
-                      {[2, 3, 4, 6, 8].map((n) => (
-                        <option key={n} value={n}>
-                          {n} weeks
-                        </option>
-                      ))}
-                    </select>
+                {(draft.type === 'day' || draft.type === 'week') && (
+                  <Field label="Workdays" description="Days marked off skip automatically.">
+                    <div className="flex gap-1.5 flex-wrap">
+                      {DAY_NAMES.map((name, i) => {
+                        const on = draft.daysOfWeek.includes(i);
+                        return (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => toggleWorkday(i)}
+                            className={`px-3 py-1.5 rounded-md text-13 hairline ${
+                              on
+                                ? 'bg-app-ink text-white border-app-ink dark:bg-app-ink-dark dark:text-app-bg'
+                                : 'bg-white dark:bg-app-card-dark text-app-ink dark:text-app-ink-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark'
+                            }`}
+                          >
+                            {name}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </Field>
-                  <Field label="Cycle starts on">
-                    <input
-                      type="date"
-                      className="field-input"
-                      value={draft.rotationStartDate}
-                      onChange={(e) => update({ rotationStartDate: e.target.value })}
-                    />
-                  </Field>
-                </div>
-              )}
-            </div>
+                )}
+                {draft.type === 'rotation' && (
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <Field label="Cycle length">
+                      <select
+                        className="w-full h-9 px-3 text-13 rounded-lg hairline bg-white dark:bg-app-card-dark text-app-ink dark:text-app-ink-dark focus:outline-none focus:ring-2 focus:ring-app-ink"
+                        value={draft.rotationCycleWeeks}
+                        onChange={(e) => setRotationLength(Number(e.target.value))}
+                      >
+                        {[2, 3, 4, 6, 8].map((n) => (
+                          <option key={n} value={n}>
+                            {n} weeks
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                    <Field label="Cycle starts on">
+                      <Input
+                        type="date"
+                        value={draft.rotationStartDate}
+                        onChange={(e) => update({ rotationStartDate: e.target.value })}
+                      />
+                    </Field>
+                  </div>
+                )}
+              </div>
+            </CardSection>
           </Card>
         )}
 
         {step === 2 && draft.type === 'day' && (
           <>
             <Card>
-              <CardSectionLabel>Pick the preset that runs on every selected workday</CardSectionLabel>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                {presetList.map((p) => {
-                  const sched = deriveSchedule(p, breakPolicies);
-                  return (
-                    <PresetPickerCard
-                      key={p.id}
-                      preset={p}
-                      endMin={sched.endMin}
-                      selected={draft.dayPresetId === p.id}
-                      onClick={() => update({ dayPresetId: p.id })}
-                    />
-                  );
-                })}
-              </div>
-              {draft.dayPresetId && (
-                <div className="mt-4">
-                  <div className="label-caps mb-2">Preview</div>
-                  <WeekPreviewStrip
-                    weekStart={weekStart}
-                    daysOfWeek={draft.daysOfWeek}
-                    presetIds={Array.from({ length: 7 }, (_, i) =>
-                      draft.daysOfWeek.includes(i) ? draft.dayPresetId! : null,
-                    )}
-                    presets={presets}
-                  />
+              <CardSection title="Pick the preset that runs on every selected workday">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {presetList.map((p) => {
+                    const sched = deriveSchedule(p, breakPolicies);
+                    return (
+                      <PresetPickerCard
+                        key={p.id}
+                        preset={p}
+                        endMin={sched.endMin}
+                        selected={draft.dayPresetId === p.id}
+                        onClick={() => update({ dayPresetId: p.id })}
+                      />
+                    );
+                  })}
                 </div>
-              )}
+                {draft.dayPresetId && (
+                  <div className="mt-4">
+                    <p className="text-11 tracking-[0.08em] uppercase text-app-faint dark:text-app-faint-dark font-medium mb-2">
+                      Preview
+                    </p>
+                    <WeekPreviewStrip
+                      weekStart={weekStart}
+                      daysOfWeek={draft.daysOfWeek}
+                      presetIds={Array.from({ length: 7 }, (_, i) =>
+                        draft.daysOfWeek.includes(i) ? draft.dayPresetId! : null,
+                      )}
+                      presets={presets}
+                    />
+                  </div>
+                )}
+              </CardSection>
             </Card>
             <ComplianceSummaryCard
               weekStart={weekStart}
@@ -292,47 +302,50 @@ export const NewTemplatePage = () => {
         {step === 2 && draft.type === 'week' && (
           <>
             <Card>
-              <CardSectionLabel>Tap each workday to assign a preset. Days marked off skip.</CardSectionLabel>
-              <WeekCompositionGrid
-                weekStart={weekStart}
-                daysOfWeek={draft.daysOfWeek}
-                presetIds={draft.weekDays}
-                presets={presets}
-                activeIndex={activeWeekDay}
-                onPickDay={(i) => setActiveWeekDay(i)}
-              />
-              {activeWeekDay !== null && draft.daysOfWeek.includes(activeWeekDay) && (
-                <div className="mt-3 hairline rounded-md p-3 flex flex-wrap items-center gap-2">
-                  <span className="label-caps mr-1">Assign</span>
-                  {presetList.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
+              <CardSection title="Tap each workday to assign a preset. Days marked off skip.">
+                <WeekCompositionGrid
+                  weekStart={weekStart}
+                  daysOfWeek={draft.daysOfWeek}
+                  presetIds={draft.weekDays}
+                  presets={presets}
+                  activeIndex={activeWeekDay}
+                  onPickDay={(i) => setActiveWeekDay(i)}
+                />
+                {activeWeekDay !== null && draft.daysOfWeek.includes(activeWeekDay) && (
+                  <div className="mt-3 hairline rounded-md p-3 flex flex-wrap items-center gap-2">
+                    <span className="text-11 tracking-[0.08em] uppercase text-app-faint dark:text-app-faint-dark font-medium mr-1">
+                      Assign
+                    </span>
+                    {presetList.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => {
+                          const next = [...draft.weekDays];
+                          next[activeWeekDay] = p.id;
+                          update({ weekDays: next });
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-md hairline px-2 py-1 text-13 text-app-ink dark:text-app-ink-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
+                      >
+                        <span className="size-2 rounded-full" style={{ backgroundColor: p.color }} />
+                        {p.nameEn}
+                      </button>
+                    ))}
+                    <div className="flex-1" />
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => {
                         const next = [...draft.weekDays];
-                        next[activeWeekDay] = p.id;
+                        next[activeWeekDay] = null;
                         update({ weekDays: next });
                       }}
-                      className="inline-flex items-center gap-1.5 rounded-md hairline px-2 py-1 text-13 hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
                     >
-                      <span className="size-2 rounded-full" style={{ backgroundColor: p.color }} />
-                      {p.nameEn}
-                    </button>
-                  ))}
-                  <div className="flex-1" />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const next = [...draft.weekDays];
-                      next[activeWeekDay] = null;
-                      update({ weekDays: next });
-                    }}
-                    className="inline-flex items-center rounded-md px-2 py-1 text-11 text-app-mute dark:text-app-mute-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
-                  >
-                    Clear
-                  </button>
-                </div>
-              )}
+                      Clear
+                    </Button>
+                  </div>
+                )}
+              </CardSection>
             </Card>
             <ComplianceSummaryCard
               weekStart={weekStart}
@@ -345,73 +358,72 @@ export const NewTemplatePage = () => {
         {step === 2 && draft.type === 'rotation' && (
           <>
             <Card>
-              <CardSectionLabel>
-                {draft.rotationCycleWeeks}-week cycle. Configure each week's pattern.
-              </CardSectionLabel>
-              <div className="space-y-4">
-                {draft.rotationWeeks.map((wk, wi) => (
-                  <div key={wi}>
-                    <div className="text-13 font-medium mb-2">Week {wi + 1}</div>
-                    <WeekCompositionGrid
-                      weekStart={addDays(parseIsoLocal(draft.rotationStartDate), wi * 7)}
-                      daysOfWeek={draft.daysOfWeek}
-                      presetIds={wk.dayPresetIds}
-                      presets={presets}
-                      activeIndex={activeRotationCell?.week === wi ? activeRotationCell.day : null}
-                      onPickDay={(d) => setActiveRotationCell({ week: wi, day: d })}
-                    />
-                  </div>
-                ))}
-              </div>
-              {activeRotationCell &&
-                draft.daysOfWeek.includes(activeRotationCell.day) && (
-                  <div className="mt-3 hairline rounded-md p-3 flex flex-wrap items-center gap-2">
-                    <span className="label-caps mr-1">
-                      Week {activeRotationCell.week + 1} · {DAY_NAMES[activeRotationCell.day]}
-                    </span>
-                    {presetList.map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
+              <CardSection title={`${draft.rotationCycleWeeks}-week cycle. Configure each week's pattern.`}>
+                <div className="space-y-4">
+                  {draft.rotationWeeks.map((wk, wi) => (
+                    <div key={wi}>
+                      <div className="text-13 font-medium mb-2 text-app-ink dark:text-app-ink-dark">Week {wi + 1}</div>
+                      <WeekCompositionGrid
+                        weekStart={addDays(parseIsoLocal(draft.rotationStartDate), wi * 7)}
+                        daysOfWeek={draft.daysOfWeek}
+                        presetIds={wk.dayPresetIds}
+                        presets={presets}
+                        activeIndex={activeRotationCell?.week === wi ? activeRotationCell.day : null}
+                        onPickDay={(d) => setActiveRotationCell({ week: wi, day: d })}
+                      />
+                    </div>
+                  ))}
+                </div>
+                {activeRotationCell &&
+                  draft.daysOfWeek.includes(activeRotationCell.day) && (
+                    <div className="mt-3 hairline rounded-md p-3 flex flex-wrap items-center gap-2">
+                      <span className="text-11 tracking-[0.08em] uppercase text-app-faint dark:text-app-faint-dark font-medium mr-1">
+                        Week {activeRotationCell.week + 1} · {DAY_NAMES[activeRotationCell.day]}
+                      </span>
+                      {presetList.map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => {
+                            const next = draft.rotationWeeks.map((w, i) =>
+                              i === activeRotationCell.week
+                                ? {
+                                    dayPresetIds: w.dayPresetIds.map((id, di) =>
+                                      di === activeRotationCell.day ? p.id : id,
+                                    ),
+                                  }
+                                : w,
+                            );
+                            update({ rotationWeeks: next });
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-md hairline px-2 py-1 text-13 text-app-ink dark:text-app-ink-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
+                        >
+                          <span className="size-2 rounded-full" style={{ backgroundColor: p.color }} />
+                          {p.nameEn}
+                        </button>
+                      ))}
+                      <div className="flex-1" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => {
                           const next = draft.rotationWeeks.map((w, i) =>
                             i === activeRotationCell.week
                               ? {
                                   dayPresetIds: w.dayPresetIds.map((id, di) =>
-                                    di === activeRotationCell.day ? p.id : id,
+                                    di === activeRotationCell.day ? null : id,
                                   ),
                                 }
                               : w,
                           );
                           update({ rotationWeeks: next });
                         }}
-                        className="inline-flex items-center gap-1.5 rounded-md hairline px-2 py-1 text-13 hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
                       >
-                        <span className="size-2 rounded-full" style={{ backgroundColor: p.color }} />
-                        {p.nameEn}
-                      </button>
-                    ))}
-                    <div className="flex-1" />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const next = draft.rotationWeeks.map((w, i) =>
-                          i === activeRotationCell.week
-                            ? {
-                                dayPresetIds: w.dayPresetIds.map((id, di) =>
-                                  di === activeRotationCell.day ? null : id,
-                                ),
-                              }
-                            : w,
-                        );
-                        update({ rotationWeeks: next });
-                      }}
-                      className="inline-flex items-center rounded-md px-2 py-1 text-11 text-app-mute dark:text-app-mute-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
-                    >
-                      Clear
-                    </button>
-                  </div>
-                )}
+                        Clear
+                      </Button>
+                    </div>
+                  )}
+              </CardSection>
             </Card>
             <ComplianceSummaryCard
               weekStart={parseIsoLocal(draft.rotationStartDate)}
@@ -422,12 +434,9 @@ export const NewTemplatePage = () => {
         )}
 
         <div className="flex justify-between gap-2 pt-1">
-          <Link
-            to="/settings/attendance/shifts/settings"
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg font-medium h-9 px-3.5 text-13 bg-white dark:bg-app-card-dark hairline hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
-          >
+          <Button variant="secondary" onClick={() => navigate('/settings/attendance/shifts/settings')}>
             Cancel
-          </Link>
+          </Button>
           <div className="flex items-center gap-2">
             {step > 0 && (
               <Button variant="secondary" onClick={() => setStep((s) => s - 1)}>
@@ -440,7 +449,7 @@ export const NewTemplatePage = () => {
               </Button>
             ) : (
               <Button variant="primary" onClick={onSave}>
-                {toast ?? 'Create template'}
+                Create template
               </Button>
             )}
           </div>
@@ -472,7 +481,7 @@ const TypeCard = ({
         : 'bg-white dark:bg-app-card-dark hover:bg-app-subtle/40 dark:hover:bg-app-subtle-dark/40'
     }`}
   >
-    <div className="text-13 font-medium">{title}</div>
+    <div className="text-13 font-medium text-app-ink dark:text-app-ink-dark">{title}</div>
     <div className="mt-1 text-11 text-app-mute dark:text-app-mute-dark">{description}</div>
     <div className="mt-2 text-11 text-app-faint dark:text-app-faint-dark italic">{example}</div>
   </button>
@@ -499,14 +508,14 @@ const WeekPreviewStrip = ({
         return (
           <div key={isoDay(d)} className="text-center">
             <div className="text-11 text-app-faint dark:text-app-faint-dark">{DAY_NAMES[d.getDay()]}</div>
-            <div className="text-11 mb-1">{d.getDate()}</div>
+            <div className="text-11 mb-1 text-app-ink dark:text-app-ink-dark">{d.getDate()}</div>
             {off ? (
               <div className="rounded-md hairline border-dashed h-8 inline-flex items-center justify-center w-full text-11 text-app-faint dark:text-app-faint-dark italic">
                 Off
               </div>
             ) : preset ? (
               <div
-                className="rounded-md h-8 inline-flex items-center justify-center w-full text-11 font-medium truncate px-1"
+                className="rounded-md h-8 inline-flex items-center justify-center w-full text-11 font-medium truncate px-1 text-app-ink dark:text-app-ink-dark"
                 style={{ borderLeft: `3px solid ${preset.color}`, backgroundColor: `${preset.color}22` }}
               >
                 {preset.nameEn}
@@ -568,7 +577,7 @@ const WeekCompositionGrid = ({
               <div className="mt-2 text-11 italic text-app-faint dark:text-app-faint-dark">Off</div>
             ) : preset ? (
               <div className="mt-1.5">
-                <div className="text-11 font-medium truncate">{preset.nameEn}</div>
+                <div className="text-11 font-medium truncate text-app-ink dark:text-app-ink-dark">{preset.nameEn}</div>
                 <div className="text-[10px] text-app-mute dark:text-app-mute-dark">
                   {preset.startTime}
                 </div>
@@ -582,4 +591,3 @@ const WeekCompositionGrid = ({
     </div>
   );
 };
-
