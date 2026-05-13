@@ -26,7 +26,7 @@ import {
   useEffect,
   useRef,
   useState,
-  type HTMLAttributes,
+  type ButtonHTMLAttributes,
   type ReactNode,
 } from 'react';
 import { X } from 'lucide-react';
@@ -77,7 +77,7 @@ export const Popover = ({
   );
 };
 
-interface PopoverTriggerProps extends HTMLAttributes<HTMLButtonElement> {
+interface PopoverTriggerProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean;
   children: ReactNode;
 }

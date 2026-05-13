@@ -115,6 +115,13 @@ export { Pagination } from './Pagination';
 
 export { Slider } from './Slider';
 
+export { InputGroup, InputGroupAddon, InputGroupInput } from './InputGroup';
+
+export { Calendar } from './Calendar';
+export type { DateRange } from './Calendar';
+
+export { CalendarPopover } from './CalendarPopover';
+
 // Organisms
 export { Table } from './Table';
 export type { TableColumn } from './Table';
