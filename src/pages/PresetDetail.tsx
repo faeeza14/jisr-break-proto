@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { nanoid } from 'nanoid';
-import { ArrowUpRight, CalendarRange, CheckCircle2, History, Pencil, Plus, ShieldAlert } from 'lucide-react';
+import { ArrowUpRight, ChevronDown, CheckCircle2, History, Pencil, Plus, ShieldAlert } from 'lucide-react';
 
 import {
   PageHeader,
@@ -13,8 +13,14 @@ import {
   Input,
   Tag,
   Banner,
+  CalendarPopover,
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
   useToast,
 } from '@jisr-hr/ds-web';
+import { isoDay, parseIsoLocal } from '../lib/weekly';
 import { Timeline, TimelineLegend } from '../components/timeline/Timeline';
 import { BreakSheet } from '../components/BreakSheet';
 import { OverrideModal } from '../components/OverrideModal';
@@ -225,14 +231,10 @@ export const PresetDetail = () => {
         border={false}
         actions={
           <>
-            <div className="inline-flex items-center gap-1.5 hairline rounded-md px-2 h-9 bg-white dark:bg-app-card-dark">
-              <CalendarRange className="size-3.5 text-app-faint" />
-              <input
-                type="date"
-                value={ui.currentDate}
-                onChange={(e) => setDate(e.target.value)}
-                className="bg-transparent text-13 focus:outline-none text-app-ink dark:text-app-ink-dark"
-                aria-label="Current date"
+            <div className="w-44">
+              <CalendarPopover
+                value={parseIsoLocal(ui.currentDate)}
+                onChange={(d) => d && setDate(isoDay(d))}
               />
             </div>
             {headerStatus}
@@ -303,17 +305,17 @@ export const PresetDetail = () => {
                   label="Work environment"
                   description="Drives heat-ban compliance for the KSA outdoor work rule."
                 >
-                  <select
-                    className="w-full h-9 px-3 text-13 rounded-lg hairline bg-white dark:bg-app-card-dark text-app-ink dark:text-app-ink-dark focus:outline-none focus:ring-2 focus:ring-app-ink"
+                  <SelectDropdown
                     value={preset.workEnvironment}
-                    onChange={(e) =>
-                      updatePreset(preset.id, { workEnvironment: e.target.value as WorkEnvironment })
+                    options={[
+                      { id: 'indoor', label: 'Indoor' },
+                      { id: 'outdoor', label: 'Outdoor' },
+                      { id: 'mixed', label: 'Mixed' },
+                    ]}
+                    onChange={(v) =>
+                      updatePreset(preset.id, { workEnvironment: v as WorkEnvironment })
                     }
-                  >
-                    <option value="indoor">Indoor</option>
-                    <option value="outdoor">Outdoor</option>
-                    <option value="mixed">Mixed</option>
-                  </select>
+                  />
                 </Field>
               </div>
             </CardSection>
@@ -676,17 +678,8 @@ const PolicyRow = ({
       <div className="text-13 font-medium text-app-ink dark:text-app-ink-dark">{title}</div>
       <div className="text-11 text-app-mute dark:text-app-mute-dark mt-0.5 truncate">{meta}</div>
     </div>
-    <select
-      className="w-full h-9 px-3 text-13 rounded-lg hairline bg-white dark:bg-app-card-dark text-app-ink dark:text-app-ink-dark focus:outline-none focus:ring-2 focus:ring-app-ink"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    >
-      {options.map((o) => (
-        <option key={o.id} value={o.id}>
-          {o.label}
-        </option>
-      ))}
-    </select>
+    <SelectDropdown value={value} options={options} onChange={onChange} />
+
     <Link
       to={configureTo}
       className="inline-flex items-center justify-center gap-1 h-9 px-3 rounded-lg hairline bg-white dark:bg-app-card-dark text-13 text-app-ink dark:text-app-ink-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
@@ -696,6 +689,41 @@ const PolicyRow = ({
     </Link>
   </div>
 );
+
+const SelectDropdown = ({
+  value,
+  options,
+  onChange,
+  placeholder = 'Select…',
+}: {
+  value: string;
+  options: { id: string; label: string }[];
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) => {
+  const current = options.find((o) => o.id === value);
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger className="w-full">
+        <Button
+          variant="secondary"
+          size="md"
+          trailingIcon={<ChevronDown className="size-3.5" />}
+          className="w-full justify-between"
+        >
+          <span className="truncate text-left flex-1">{current?.label ?? placeholder}</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-full min-w-[var(--radix-dropdown-trigger-width)]">
+        {options.map((o) => (
+          <DropdownMenuItem key={o.id} onSelect={() => onChange(o.id)}>
+            {o.label}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
 
 const SuggestedFix = ({
   fix,

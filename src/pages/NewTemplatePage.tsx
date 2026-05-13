@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { nanoid } from 'nanoid';
+import { ChevronDown } from 'lucide-react';
 import {
   PageHeader,
   SmartBreadcrumb,
@@ -9,6 +10,11 @@ import {
   Button,
   Field,
   Input,
+  CalendarPopover,
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
   useToast,
 } from '@jisr-hr/ds-web';
 import { StepIndicator } from '../components/StepIndicator';
@@ -16,6 +22,7 @@ import { PresetPickerCard } from '../components/PresetPickerCard';
 import { ComplianceSummaryCard } from '../components/ComplianceSummaryCard';
 import { useAppStore } from '../store';
 import { DAY_NAMES, addDays, eachDayInWeek, isoDay, parseIsoLocal, startOfSundayWeek } from '../lib/weekly';
+// SelectDropdown helper defined at bottom
 import { deriveSchedule } from '../lib/segments';
 import type { ShiftPreset, ShiftTemplate, TemplateType } from '../types';
 
@@ -230,23 +237,19 @@ export const NewTemplatePage = () => {
                 {draft.type === 'rotation' && (
                   <div className="grid sm:grid-cols-2 gap-3">
                     <Field label="Cycle length">
-                      <select
-                        className="w-full h-9 px-3 text-13 rounded-lg hairline bg-white dark:bg-app-card-dark text-app-ink dark:text-app-ink-dark focus:outline-none focus:ring-2 focus:ring-app-ink"
-                        value={draft.rotationCycleWeeks}
-                        onChange={(e) => setRotationLength(Number(e.target.value))}
-                      >
-                        {[2, 3, 4, 6, 8].map((n) => (
-                          <option key={n} value={n}>
-                            {n} weeks
-                          </option>
-                        ))}
-                      </select>
+                      <SelectDropdown
+                        value={String(draft.rotationCycleWeeks)}
+                        options={[2, 3, 4, 6, 8].map((n) => ({
+                          id: String(n),
+                          label: `${n} weeks`,
+                        }))}
+                        onChange={(v) => setRotationLength(Number(v))}
+                      />
                     </Field>
                     <Field label="Cycle starts on">
-                      <Input
-                        type="date"
-                        value={draft.rotationStartDate}
-                        onChange={(e) => update({ rotationStartDate: e.target.value })}
+                      <CalendarPopover
+                        value={parseIsoLocal(draft.rotationStartDate)}
+                        onChange={(d) => d && update({ rotationStartDate: isoDay(d) })}
                       />
                     </Field>
                   </div>
@@ -486,6 +489,41 @@ const TypeCard = ({
     <div className="mt-2 text-11 text-app-faint dark:text-app-faint-dark italic">{example}</div>
   </button>
 );
+
+const SelectDropdown = ({
+  value,
+  options,
+  onChange,
+  placeholder = 'Select…',
+}: {
+  value: string;
+  options: { id: string; label: string }[];
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) => {
+  const current = options.find((o) => o.id === value);
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger className="w-full">
+        <Button
+          variant="secondary"
+          size="md"
+          trailingIcon={<ChevronDown className="size-3.5" />}
+          className="w-full justify-between"
+        >
+          <span className="truncate text-left flex-1">{current?.label ?? placeholder}</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-full min-w-[var(--radix-dropdown-trigger-width)]">
+        {options.map((o) => (
+          <DropdownMenuItem key={o.id} onSelect={() => onChange(o.id)}>
+            {o.label}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
 
 const WeekPreviewStrip = ({
   weekStart,

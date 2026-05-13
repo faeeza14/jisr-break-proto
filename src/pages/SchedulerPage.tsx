@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
 import { useAppStore } from '../store';
 import {
   DAY_NAMES,
@@ -13,7 +13,16 @@ import {
   parseIsoLocal,
   startOfSundayWeek,
 } from '../lib/weekly';
-import { Button, Card, CardSection, Tag } from '@jisr-hr/ds-web';
+import {
+  Button,
+  Card,
+  CardSection,
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  Tag,
+} from '@jisr-hr/ds-web';
 import { PresetPickerCard } from '../components/PresetPickerCard';
 import { evaluateCompliance } from '../lib/compliance';
 import { deriveSchedule } from '../lib/segments';
@@ -200,19 +209,27 @@ export const SchedulerPage = () => {
           <Button variant="secondary" size="sm" onClick={() => setWeekStart(startOfSundayWeek(todayDate))}>
             Today
           </Button>
-          <select
-            value={groupFilter}
-            onChange={(e) => setGroupFilter(e.target.value)}
-            className="h-8 px-2.5 text-13 rounded-md hairline bg-white dark:bg-app-card-dark text-app-ink dark:text-app-ink-dark max-w-[220px] focus:outline-none focus:ring-2 focus:ring-app-ink"
-            aria-label="Filter by group"
-          >
-            <option value="all">All groups</option>
-            {groups.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.name}
-              </option>
-            ))}
-          </select>
+          <DropdownMenu>
+            <DropdownMenuTrigger>
+              <Button
+                variant="secondary"
+                size="sm"
+                trailingIcon={<ChevronDown className="size-3.5" />}
+              >
+                {groupFilter === 'all'
+                  ? 'All groups'
+                  : (groups.find((g) => g.id === groupFilter)?.name ?? 'All groups')}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onSelect={() => setGroupFilter('all')}>All groups</DropdownMenuItem>
+              {groups.map((g) => (
+                <DropdownMenuItem key={g.id} onSelect={() => setGroupFilter(g.id)}>
+                  {g.name}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <div className="flex-1" />
           <Button
             variant="primary"

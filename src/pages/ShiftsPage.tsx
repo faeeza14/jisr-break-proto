@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowDown, ArrowUp, Download, Plus, Search } from 'lucide-react';
+import { ArrowDown, ArrowUp, CalendarRange, Clock, Download, Plus, Search } from 'lucide-react';
 import {
   Button,
   Card,
   Checkbox,
+  Empty,
   Input,
   Table,
   Tag,
@@ -53,19 +54,24 @@ export const ShiftsPage = () => {
       <div className="flex-1 min-w-0">
         {sub === 'presets' && <PresetsList />}
         {sub === 'templates' && <TemplatesList />}
-        {sub === 'open' && <EmptyState title="No open shifts" sub="Open shifts let employees claim available slots." />}
-        {sub === 'fixed' && <EmptyState title="No fixed hours configured" sub="Define salaried fixed hour patterns here." />}
+        {sub === 'open' && (
+          <Empty
+            media={<CalendarRange className="size-6" />}
+            title="No open shifts"
+            description="Open shifts let employees claim available slots."
+          />
+        )}
+        {sub === 'fixed' && (
+          <Empty
+            media={<Clock className="size-6" />}
+            title="No fixed hours configured"
+            description="Define salaried fixed hour patterns here."
+          />
+        )}
       </div>
     </div>
   );
 };
-
-const EmptyState = ({ title, sub }: { title: string; sub: string }) => (
-  <Card className="text-center">
-    <h2 className="text-13 font-medium text-app-ink dark:text-app-ink-dark">{title}</h2>
-    <p className="mt-1 text-13 text-app-mute dark:text-app-mute-dark">{sub}</p>
-  </Card>
-);
 
 type SortDir = 'asc' | 'desc';
 
