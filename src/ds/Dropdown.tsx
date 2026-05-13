@@ -153,7 +153,7 @@ export const DropdownMenuContent = ({
         'absolute z-50 min-w-[200px] rounded-lg p-1',
         'bg-white dark:bg-app-card-dark',
         'border border-app-line dark:border-app-line-dark',
-        'shadow-[0_0_24px_0_rgba(0,0,0,0.08)]',
+        'shadow-popover',
         sideCls,
         alignCls,
         className,

@@ -82,7 +82,8 @@ export const InputGroupAddon = ({
   const cls = [
     'inline-flex items-center justify-center px-2.5 text-13 select-none whitespace-nowrap',
     'bg-app-surface dark:bg-app-subtle-dark text-app-mute dark:text-app-mute-dark',
-    asButton ? 'hover:bg-app-subtle dark:hover:bg-app-subtle-dark cursor-pointer' : '',
+    // Addon already sits on app-surface; hover deepens to app-bg (matches pressed token in Item spec)
+    asButton ? 'hover:bg-app-bg dark:hover:bg-app-subtle-dark cursor-pointer' : '',
     position === 'leading' ? 'pr-2' : position === 'trailing' ? 'pl-2' : '',
     className,
   ]

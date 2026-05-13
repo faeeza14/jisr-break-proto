@@ -73,7 +73,7 @@ export const BreakSheet = ({ open, onClose, onSave, initial, breakPolicies }: Pr
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="size-7 inline-flex items-center justify-center rounded-md hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
+            className="size-7 inline-flex items-center justify-center rounded-md hover:bg-app-surface dark:hover:bg-app-subtle-dark"
           >
             <X className="size-4" />
           </button>
@@ -112,7 +112,7 @@ export const BreakSheet = ({ open, onClose, onSave, initial, breakPolicies }: Pr
                   className={`px-2 py-1.5 rounded-md text-13 hairline text-center capitalize ${
                     draft.scheduleType === k
                       ? 'bg-app-ink text-white border-app-ink dark:bg-app-ink-dark dark:text-app-ink'
-                      : 'bg-white dark:bg-app-card-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark'
+                      : 'bg-white dark:bg-app-card-dark hover:bg-app-surface dark:hover:bg-app-subtle-dark'
                   }`}
                 >
                   {k}

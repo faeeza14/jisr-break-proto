@@ -36,7 +36,7 @@ export const AuditLogModal = ({ open, onClose, entries, title }: Props) => {
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="size-7 inline-flex items-center justify-center rounded-md hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
+            className="size-7 inline-flex items-center justify-center rounded-md hover:bg-app-surface dark:hover:bg-app-subtle-dark"
           >
             <X className="size-4" />
           </button>
@@ -50,7 +50,7 @@ export const AuditLogModal = ({ open, onClose, entries, title }: Props) => {
                 <button
                   type="button"
                   onClick={() => setExpanded(isOpen ? null : e.id)}
-                  className="w-full text-left px-3 py-2.5 flex items-center gap-2 hover:bg-app-subtle/40 dark:hover:bg-app-subtle-dark/30"
+                  className="w-full text-left px-3 py-2.5 flex items-center gap-2 hover:bg-app-surface dark:hover:bg-app-subtle-dark"
                 >
                   {isOpen ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
                   <div className="flex-1 min-w-0">

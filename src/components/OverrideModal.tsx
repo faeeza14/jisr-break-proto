@@ -40,7 +40,7 @@ export const OverrideModal = ({ open, onClose, violations, onConfirm }: Props) =
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="size-7 inline-flex items-center justify-center rounded-md hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
+            className="size-7 inline-flex items-center justify-center rounded-md hover:bg-app-surface dark:hover:bg-app-subtle-dark"
           >
             <X className="size-4" />
           </button>

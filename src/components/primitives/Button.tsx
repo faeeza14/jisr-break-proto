@@ -13,9 +13,9 @@ const variantMap: Record<Variant, string> = {
   primary:
     'bg-app-ink text-white hover:opacity-90 dark:bg-app-ink-dark dark:text-app-ink disabled:opacity-40',
   secondary:
-    'bg-white dark:bg-app-card-dark hairline text-app-ink dark:text-app-ink-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark disabled:opacity-40',
+    'bg-white dark:bg-app-card-dark hairline text-app-ink dark:text-app-ink-dark hover:bg-app-surface dark:hover:bg-app-subtle-dark disabled:opacity-40',
   ghost:
-    'bg-transparent text-app-mute dark:text-app-mute-dark hover:text-app-ink dark:hover:text-app-ink-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark',
+    'bg-transparent text-app-mute dark:text-app-mute-dark hover:text-app-ink dark:hover:text-app-ink-dark hover:bg-app-surface dark:hover:bg-app-subtle-dark',
   danger:
     'bg-danger-ink text-white hover:opacity-90 disabled:opacity-40',
 };

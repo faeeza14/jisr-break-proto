@@ -19,7 +19,7 @@ export const PresetPickerCard = ({ preset, selected, warning, onClick, endMin, c
       type="button"
       onClick={onClick}
       className={`relative text-left p-3 rounded-md hairline transition w-full focus-ring ${
-        selected ? 'ring-2 ring-app-ink dark:ring-app-ink-dark border-transparent' : 'hover:bg-app-subtle/40 dark:hover:bg-app-subtle-dark/40'
+        selected ? 'ring-2 ring-app-ink dark:ring-app-ink-dark border-transparent' : 'hover:bg-app-surface dark:hover:bg-app-subtle-dark'
       }`}
       style={{ backgroundColor: selected ? colorAlpha : undefined }}
     >

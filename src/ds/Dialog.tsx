@@ -66,7 +66,7 @@ export const DialogContent = ({
       <button
         type="button"
         onClick={onClose}
-        className="absolute top-3.5 right-4 size-7 inline-flex items-center justify-center rounded-md text-app-mute hover:bg-app-subtle dark:hover:bg-app-subtle-dark transition"
+        className="absolute top-3.5 right-4 size-7 inline-flex items-center justify-center rounded-md text-app-mute hover:bg-app-surface dark:hover:bg-app-subtle-dark transition"
         aria-label="Close"
       >
         <X className="size-4" />

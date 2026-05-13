@@ -396,7 +396,7 @@ export const PresetDetail = () => {
                     emphasis="mid"
                     title="Compliance violations overridden"
                     actions={
-                      <Button variant="ghost" size="sm" onClick={() => setOverridden(false)}>
+                      <Button variant="tertiary" size="sm" onClick={() => setOverridden(false)}>
                         Re-evaluate
                       </Button>
                     }
@@ -456,14 +456,14 @@ export const PresetDetail = () => {
                     </div>
                     <Tag appearance="neutral" size="sm">{fmtDuration(b.durationMinutes)}</Tag>
                     <Button
-                      variant="ghost"
+                      variant="tertiary"
                       size="sm"
                       onClick={() => setBreakSheet({ open: true, editing: b })}
                       leadingIcon={<Pencil className="size-3.5" />}
                     >
                       Edit
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => removeBreak(preset.id, b.id)}>
+                    <Button variant="tertiary" size="sm" onClick={() => removeBreak(preset.id, b.id)}>
                       Remove
                     </Button>
                   </li>
@@ -682,7 +682,7 @@ const PolicyRow = ({
 
     <Link
       to={configureTo}
-      className="inline-flex items-center justify-center gap-1 h-9 px-3 rounded-lg hairline bg-white dark:bg-app-card-dark text-13 text-app-ink dark:text-app-ink-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
+      className="inline-flex items-center justify-center gap-1 h-9 px-3 rounded-lg hairline bg-white dark:bg-app-card-dark text-13 text-app-ink dark:text-app-ink-dark hover:bg-app-surface dark:hover:bg-app-subtle-dark"
     >
       Configure
       <ArrowUpRight className="size-3.5" />

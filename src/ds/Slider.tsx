@@ -48,32 +48,39 @@ export const Slider = ({
           {showValue && <span className="tabular-nums">{formatted}</span>}
         </div>
       )}
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        disabled={disabled}
-        aria-label={ariaLabel ?? label ?? 'Slider'}
-        onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(Number(e.target.value))}
-        className={[
-          // Custom thumb via accent-color + minimum sizing
-          'w-full h-2 appearance-none cursor-pointer rounded-full bg-app-subtle dark:bg-app-subtle-dark',
-          'accent-app-ink dark:accent-app-ink-dark',
-          '[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-app-ink dark:[&::-webkit-slider-thumb]:bg-app-ink-dark [&::-webkit-slider-thumb]:ring-2 [&::-webkit-slider-thumb]:ring-white [&::-webkit-slider-thumb]:shadow-sm',
-          '[&::-moz-range-thumb]:size-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-app-ink dark:[&::-moz-range-thumb]:bg-app-ink-dark [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white',
-          disabled ? 'opacity-40 cursor-not-allowed' : '',
-        ]
-          .filter(Boolean)
-          .join(' ')}
-        style={{
-          // Gradient fill for the played portion of the track
-          background: disabled
-            ? undefined
-            : `linear-gradient(to right, var(--tw-color-app-ink, #101014) 0%, var(--tw-color-app-ink, #101014) ${pct}%, transparent ${pct}%, transparent 100%)`,
-        }}
-      />
+      <div className="relative">
+        {/* Played fill — uses app-ink token, width controlled by pct */}
+        <div
+          aria-hidden="true"
+          className={[
+            'absolute left-0 top-1/2 -translate-y-1/2 h-2 rounded-full bg-app-ink dark:bg-app-ink-dark pointer-events-none',
+            disabled ? 'opacity-30' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+          style={{ width: `${pct}%` }}
+        />
+        <input
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          disabled={disabled}
+          aria-label={ariaLabel ?? label ?? 'Slider'}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(Number(e.target.value))}
+          className={[
+            'relative w-full h-2 appearance-none cursor-pointer rounded-full bg-app-subtle dark:bg-app-subtle-dark',
+            'accent-app-ink dark:accent-app-ink-dark',
+            '[&::-webkit-slider-runnable-track]:bg-transparent',
+            '[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-app-ink dark:[&::-webkit-slider-thumb]:bg-app-ink-dark [&::-webkit-slider-thumb]:ring-2 [&::-webkit-slider-thumb]:ring-white [&::-webkit-slider-thumb]:shadow-sm',
+            '[&::-moz-range-thumb]:size-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-app-ink dark:[&::-moz-range-thumb]:bg-app-ink-dark [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white',
+            disabled ? 'opacity-40 cursor-not-allowed' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        />
+      </div>
     </div>
   );
 };

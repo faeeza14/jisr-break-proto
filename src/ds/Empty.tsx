@@ -13,7 +13,7 @@
  *     title="No policies yet"
  *     description="Create one to get started."
  *     primaryAction={<Button>New policy</Button>}
- *     secondaryAction={<Button variant="ghost">Learn more</Button>}
+ *     secondaryAction={<Button variant="tertiary">Learn more</Button>}
  *   />
  */
 import type { ReactNode } from 'react';

@@ -66,7 +66,7 @@ export const DrawerHeader = ({
       <button
         type="button"
         onClick={onClose}
-        className="size-7 inline-flex items-center justify-center rounded-md text-app-mute hover:bg-app-subtle dark:hover:bg-app-subtle-dark transition"
+        className="size-7 inline-flex items-center justify-center rounded-md text-app-mute hover:bg-app-surface dark:hover:bg-app-subtle-dark transition"
         aria-label="Close"
       >
         <X className="size-4" />

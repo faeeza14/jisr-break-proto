@@ -112,7 +112,7 @@ export const AccordionTrigger = ({ value, children, badge, leadingAvatar, classN
       onClick={() => toggle(value)}
       aria-expanded={isOpen}
       className={[
-        'w-full flex items-center justify-between gap-2 font-medium text-app-ink dark:text-app-ink-dark hover:bg-app-subtle/50 dark:hover:bg-app-subtle-dark/50 transition-colors',
+        'w-full flex items-center justify-between gap-2 font-medium text-app-ink dark:text-app-ink-dark hover:bg-app-subtle/50 dark:hover:bg-app-subtle-dark transition-colors',
         sizeClasses[size],
         className,
       ]

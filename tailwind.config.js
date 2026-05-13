@@ -7,20 +7,21 @@ export default {
       // Colors aligned to real Wasl DS values (Figma file dENVT3cpolQRwvDxU35Jvs)
       colors: {
         app: {
-          bg: '#F3F3F8',         // page bg (real DS)
+          bg: '#F3F3F8',          // page bg / canvas-pressed (real DS)
           'bg-dark': '#0E0E0F',
           card: '#FFFFFF',
           'card-dark': '#161618',
-          surface: '#F9F9FC',    // subdued surface (info card bg in DS)
-          ink: '#101014',         // primary text (real DS)
+          surface: '#F9F9FC',     // canvas-hover / info card bg
+          ink: '#101014',          // primary text + primary button rest
+          'ink-hover': '#18181C',  // primary button hover (real DS)
           'ink-dark': '#F2F2F2',
-          mute: '#45454D',        // secondary text (real DS)
+          mute: '#45454D',         // secondary text
           'mute-dark': '#9C9FA6',
-          faint: '#6B6B75',       // tertiary text (real DS)
+          faint: '#6B6B75',        // tertiary text
           'faint-dark': '#6E7079',
-          line: 'rgba(0,0,0,0.12)',     // hairline (DS spec ~0.2 but softened for hairline width)
+          line: 'rgba(0,0,0,0.12)',
           'line-dark': 'rgba(255,255,255,0.12)',
-          subtle: '#E8E8F0',      // background tint (real DS canvas-rest)
+          subtle: '#E8E8F0',       // canvas-rest tint
           'subtle-dark': '#1E1E22',
         },
         danger: {
@@ -68,6 +69,11 @@ export default {
         shimmer: {
           '100%': { transform: 'translateX(100%)' },
         },
+      },
+      // Shadow tokens from real DS spec (Popover / Dropdown surfaces)
+      boxShadow: {
+        popover: '0 0 24px 0 rgba(0, 0, 0, 0.08)',
+        elevated: '0 2.5px 2px 0 rgba(0,0,0,0.02), 0 3px 5px 0 rgba(0,0,0,0.04), 0 8px 10px 0 rgba(0,0,0,0.08)',
       },
     },
   },

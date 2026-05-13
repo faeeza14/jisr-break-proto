@@ -37,7 +37,7 @@ const NavItem = ({ item }: { item: SidebarNavItem }) => {
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-13 text-app-mute dark:text-app-mute-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark transition-colors"
+          className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-13 text-app-mute dark:text-app-mute-dark hover:bg-app-surface dark:hover:bg-app-subtle-dark transition-colors"
         >
           {item.icon && <span className="shrink-0 size-4 text-app-faint">{item.icon}</span>}
           <span className="flex-1 text-left font-medium">{item.label}</span>
@@ -56,7 +56,7 @@ const NavItem = ({ item }: { item: SidebarNavItem }) => {
                     'block px-2 py-1.5 rounded-lg text-13 transition-colors',
                     isActive
                       ? 'bg-app-ink text-white dark:bg-app-ink-dark dark:text-app-bg font-medium'
-                      : 'text-app-mute dark:text-app-mute-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark hover:text-app-ink dark:hover:text-app-ink-dark',
+                      : 'text-app-mute dark:text-app-mute-dark hover:bg-app-surface dark:hover:bg-app-subtle-dark hover:text-app-ink dark:hover:text-app-ink-dark',
                   ].join(' ')
                 }
               >
@@ -78,7 +78,7 @@ const NavItem = ({ item }: { item: SidebarNavItem }) => {
             'flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-13 transition-colors',
             isActive
               ? 'bg-app-ink text-white dark:bg-app-ink-dark dark:text-app-bg font-medium'
-              : 'text-app-mute dark:text-app-mute-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark hover:text-app-ink dark:hover:text-app-ink-dark',
+              : 'text-app-mute dark:text-app-mute-dark hover:bg-app-surface dark:hover:bg-app-subtle-dark hover:text-app-ink dark:hover:text-app-ink-dark',
           ].join(' ')
         }
       >

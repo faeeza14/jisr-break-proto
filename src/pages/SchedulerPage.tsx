@@ -192,7 +192,7 @@ export const SchedulerPage = () => {
               type="button"
               onClick={() => setWeekStart((w) => addDays(w, -7))}
               aria-label="Previous week"
-              className="size-8 inline-flex items-center justify-center text-app-ink dark:text-app-ink-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
+              className="size-8 inline-flex items-center justify-center text-app-ink dark:text-app-ink-dark hover:bg-app-surface dark:hover:bg-app-subtle-dark"
             >
               <ChevronLeft className="size-4" />
             </button>
@@ -201,7 +201,7 @@ export const SchedulerPage = () => {
               type="button"
               onClick={() => setWeekStart((w) => addDays(w, 7))}
               aria-label="Next week"
-              className="size-8 inline-flex items-center justify-center text-app-ink dark:text-app-ink-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
+              className="size-8 inline-flex items-center justify-center text-app-ink dark:text-app-ink-dark hover:bg-app-surface dark:hover:bg-app-subtle-dark"
             >
               <ChevronRight className="size-4" />
             </button>
@@ -435,7 +435,7 @@ const Cell = ({
         onClick={onClick}
         onDragOver={(e) => e.preventDefault()}
         onDrop={onDrop}
-        className={`min-h-[56px] px-2 py-2 text-left ${baseBorder} ${weekend ? 'bg-app-subtle/30 dark:bg-app-subtle-dark/20' : ''} ${ring} hover:bg-app-subtle/50 dark:hover:bg-app-subtle-dark/40`}
+        className={`min-h-[56px] px-2 py-2 text-left ${baseBorder} ${weekend ? 'bg-app-subtle/30 dark:bg-app-subtle-dark/20' : ''} ${ring} hover:bg-app-subtle/50 dark:hover:bg-app-subtle-dark`}
       >
         <span className="block text-11 text-app-faint dark:text-app-faint-dark italic">Off</span>
       </button>
@@ -448,7 +448,7 @@ const Cell = ({
         onClick={onClick}
         onDragOver={(e) => e.preventDefault()}
         onDrop={onDrop}
-        className={`min-h-[56px] px-2 py-2 ${baseBorder} ${ring} bg-app-subtle/30 dark:bg-app-subtle-dark/20 border-l border-l-dashed hover:bg-app-subtle/60 dark:hover:bg-app-subtle-dark/50`}
+        className={`min-h-[56px] px-2 py-2 ${baseBorder} ${ring} bg-app-subtle/30 dark:bg-app-subtle-dark/20 border-l border-l-dashed hover:bg-app-subtle/60 dark:hover:bg-app-subtle-dark`}
       >
         <span className="block text-app-faint dark:text-app-faint-dark text-13">+</span>
       </button>
@@ -525,7 +525,7 @@ const AssignmentPanel = ({
           type="button"
           onClick={onClose}
           aria-label="Close panel"
-          className="size-7 inline-flex items-center justify-center rounded-md text-app-mute dark:text-app-mute-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
+          className="size-7 inline-flex items-center justify-center rounded-md text-app-mute dark:text-app-mute-dark hover:bg-app-surface dark:hover:bg-app-subtle-dark"
         >
           <X className="size-4" />
         </button>
@@ -566,7 +566,7 @@ const AssignmentPanel = ({
           </Button>
         )}
         <div className="flex-1" />
-        <Button variant="ghost" size="sm" onClick={onClose}>
+        <Button variant="tertiary" size="sm" onClick={onClose}>
           Close
         </Button>
       </div>

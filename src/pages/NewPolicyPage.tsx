@@ -208,7 +208,7 @@ export const NewPolicyPage = () => {
                     'text-left p-3 rounded-lg hairline transition',
                     kind === pt.id
                       ? 'ring-2 ring-app-ink dark:ring-app-ink-dark border-transparent bg-app-subtle/40 dark:bg-app-subtle-dark/40'
-                      : 'bg-white dark:bg-app-card-dark hover:bg-app-subtle/40 dark:hover:bg-app-subtle-dark/40',
+                      : 'bg-white dark:bg-app-card-dark hover:bg-app-surface dark:hover:bg-app-subtle-dark',
                   ].join(' ')}
                 >
                   <span className="flex items-center gap-1.5 mb-0.5">

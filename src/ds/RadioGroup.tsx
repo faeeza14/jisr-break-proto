@@ -102,7 +102,7 @@ export function SegmentedControl<T extends string>({
               'inline-flex flex-col items-start px-3 py-2 rounded-lg hairline text-13 transition capitalize',
               active
                 ? 'bg-app-ink text-white border-app-ink dark:bg-app-ink-dark dark:text-app-bg'
-                : 'bg-white dark:bg-app-card-dark text-app-ink dark:text-app-ink-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark',
+                : 'bg-white dark:bg-app-card-dark text-app-ink dark:text-app-ink-dark hover:bg-app-surface dark:hover:bg-app-subtle-dark',
               disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer',
             ]
               .filter(Boolean)

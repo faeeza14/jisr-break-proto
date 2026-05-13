@@ -15,14 +15,14 @@ export const TopBar = ({ onMenuClick }: { onMenuClick?: () => void }) => {
       <button
         type="button"
         onClick={onMenuClick}
-        className="md:hidden inline-flex items-center justify-center size-8 rounded-md hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
+        className="md:hidden inline-flex items-center justify-center size-8 rounded-md hover:bg-app-surface dark:hover:bg-app-subtle-dark"
         aria-label="Open menu"
       >
         <Menu className="size-4" />
       </button>
       <button
         type="button"
-        className="inline-flex items-center gap-2 px-2 h-8 rounded-md hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
+        className="inline-flex items-center gap-2 px-2 h-8 rounded-md hover:bg-app-surface dark:hover:bg-app-subtle-dark"
       >
         <span className="size-6 rounded-md bg-app-ink dark:bg-app-ink-dark text-white dark:text-app-ink text-11 inline-flex items-center justify-center font-medium">
           AG
@@ -34,21 +34,21 @@ export const TopBar = ({ onMenuClick }: { onMenuClick?: () => void }) => {
       <button
         type="button"
         onClick={() => setDark((d) => !d)}
-        className="inline-flex items-center justify-center size-8 rounded-md hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
+        className="inline-flex items-center justify-center size-8 rounded-md hover:bg-app-surface dark:hover:bg-app-subtle-dark"
         aria-label="Toggle theme"
       >
         {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
       </button>
       <button
         type="button"
-        className="inline-flex items-center gap-1.5 px-2 h-8 rounded-md text-13 text-app-mute dark:text-app-mute-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
+        className="inline-flex items-center gap-1.5 px-2 h-8 rounded-md text-13 text-app-mute dark:text-app-mute-dark hover:bg-app-surface dark:hover:bg-app-subtle-dark"
       >
         <HelpCircle className="size-4" />
         <span className="hidden sm:inline">Get help</span>
       </button>
       <button
         type="button"
-        className="inline-flex items-center justify-center size-8 rounded-md hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
+        className="inline-flex items-center justify-center size-8 rounded-md hover:bg-app-surface dark:hover:bg-app-subtle-dark"
         aria-label="Notifications"
       >
         <Bell className="size-4" />

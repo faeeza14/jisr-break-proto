@@ -25,8 +25,9 @@ export const Card = ({
     onClick={!disabled ? onClick : undefined}
     className={[
       'bg-white dark:bg-app-card-dark rounded-card hairline p-4 sm:p-[18px]',
+      // State pattern from DS Item spec: default → white | hover → app-surface | pressed → app-bg
       interactive && !disabled
-        ? 'cursor-pointer hover:bg-app-subtle/40 dark:hover:bg-app-subtle-dark/40 transition-colors'
+        ? 'cursor-pointer transition-colors hover:bg-app-surface active:bg-app-bg dark:hover:bg-app-subtle-dark dark:active:bg-app-subtle-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-app-ink focus-visible:ring-offset-2'
         : '',
       disabled ? 'opacity-40 cursor-not-allowed' : '',
       className,

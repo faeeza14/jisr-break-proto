@@ -224,7 +224,7 @@ export const NewTemplatePage = () => {
                             className={`px-3 py-1.5 rounded-md text-13 hairline ${
                               on
                                 ? 'bg-app-ink text-white border-app-ink dark:bg-app-ink-dark dark:text-app-bg'
-                                : 'bg-white dark:bg-app-card-dark text-app-ink dark:text-app-ink-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark'
+                                : 'bg-white dark:bg-app-card-dark text-app-ink dark:text-app-ink-dark hover:bg-app-surface dark:hover:bg-app-subtle-dark'
                             }`}
                           >
                             {name}
@@ -328,7 +328,7 @@ export const NewTemplatePage = () => {
                           next[activeWeekDay] = p.id;
                           update({ weekDays: next });
                         }}
-                        className="inline-flex items-center gap-1.5 rounded-md hairline px-2 py-1 text-13 text-app-ink dark:text-app-ink-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
+                        className="inline-flex items-center gap-1.5 rounded-md hairline px-2 py-1 text-13 text-app-ink dark:text-app-ink-dark hover:bg-app-surface dark:hover:bg-app-subtle-dark"
                       >
                         <span className="size-2 rounded-full" style={{ backgroundColor: p.color }} />
                         {p.nameEn}
@@ -336,7 +336,7 @@ export const NewTemplatePage = () => {
                     ))}
                     <div className="flex-1" />
                     <Button
-                      variant="ghost"
+                      variant="tertiary"
                       size="sm"
                       onClick={() => {
                         const next = [...draft.weekDays];
@@ -399,7 +399,7 @@ export const NewTemplatePage = () => {
                             );
                             update({ rotationWeeks: next });
                           }}
-                          className="inline-flex items-center gap-1.5 rounded-md hairline px-2 py-1 text-13 text-app-ink dark:text-app-ink-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
+                          className="inline-flex items-center gap-1.5 rounded-md hairline px-2 py-1 text-13 text-app-ink dark:text-app-ink-dark hover:bg-app-surface dark:hover:bg-app-subtle-dark"
                         >
                           <span className="size-2 rounded-full" style={{ backgroundColor: p.color }} />
                           {p.nameEn}
@@ -407,7 +407,7 @@ export const NewTemplatePage = () => {
                       ))}
                       <div className="flex-1" />
                       <Button
-                        variant="ghost"
+                        variant="tertiary"
                         size="sm"
                         onClick={() => {
                           const next = draft.rotationWeeks.map((w, i) =>
@@ -481,7 +481,7 @@ const TypeCard = ({
     className={`text-left p-4 rounded-md hairline transition ${
       selected
         ? 'ring-2 ring-app-ink dark:ring-app-ink-dark bg-app-subtle/40 dark:bg-app-subtle-dark/40'
-        : 'bg-white dark:bg-app-card-dark hover:bg-app-subtle/40 dark:hover:bg-app-subtle-dark/40'
+        : 'bg-white dark:bg-app-card-dark hover:bg-app-surface dark:hover:bg-app-subtle-dark'
     }`}
   >
     <div className="text-13 font-medium text-app-ink dark:text-app-ink-dark">{title}</div>
@@ -606,7 +606,7 @@ const WeekCompositionGrid = ({
                 ? 'bg-app-subtle/40 dark:bg-app-subtle-dark/30 cursor-not-allowed'
                 : preset
                   ? ''
-                  : 'hairline border-dashed hover:bg-app-subtle/40 dark:hover:bg-app-subtle-dark/40'
+                  : 'hairline border-dashed hover:bg-app-surface dark:hover:bg-app-subtle-dark'
             }`}
             style={preset ? { borderLeft: `3px solid ${preset.color}`, backgroundColor: `${preset.color}22` } : undefined}
           >

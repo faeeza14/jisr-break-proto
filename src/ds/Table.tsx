@@ -69,7 +69,7 @@ export function Table<T = Record<string, unknown>>({
             onClick={() => onRowClick?.(row)}
             className={[
               'grid border-b border-app-line dark:border-app-line-dark last:border-b-0 items-center text-13 transition-colors',
-              onRowClick ? 'cursor-pointer hover:bg-app-subtle/50 dark:hover:bg-app-subtle-dark/50' : '',
+              onRowClick ? 'cursor-pointer hover:bg-app-subtle/50 dark:hover:bg-app-subtle-dark' : '',
             ]
               .filter(Boolean)
               .join(' ')}

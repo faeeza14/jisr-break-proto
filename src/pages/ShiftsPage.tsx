@@ -41,7 +41,7 @@ export const ShiftsPage = () => {
                 className={`whitespace-nowrap text-13 px-2.5 py-1.5 rounded-md w-full text-left ${
                   sub === it.id
                     ? 'bg-app-subtle dark:bg-app-subtle-dark text-app-ink dark:text-app-ink-dark font-medium'
-                    : 'text-app-mute dark:text-app-mute-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark'
+                    : 'text-app-mute dark:text-app-mute-dark hover:bg-app-surface dark:hover:bg-app-subtle-dark'
                 }`}
               >
                 {it.label}
