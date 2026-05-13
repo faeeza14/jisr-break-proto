@@ -159,6 +159,12 @@ interface AvatarGroupProps {
   className?: string;
 }
 
+/**
+ * Per Figma changelog 23.02.2026:
+ *   - item wrapper removed from structure
+ *   - count border now inside the avatar
+ *   - Mobile: typical max visible avatar = 3
+ */
 export const AvatarGroup = ({
   children,
   max = 4,
@@ -185,3 +191,63 @@ export const AvatarGroup = ({
     </div>
   );
 };
+
+/**
+ * [Pattern] AvatarLabel — Avatar + label/sublabel combo from Figma
+ * (component 16808:10575). Per Figma: "We've combined them together
+ * and created it as a pattern component to provide guidance in dialog
+ * overflow."
+ */
+interface AvatarLabelProps {
+  avatar: ReactNode;
+  /** Primary line — usually a person's name */
+  label: ReactNode;
+  /** Secondary line — role, email, status */
+  sublabel?: ReactNode;
+  /** Trailing slot — Badge, Tag, IconButton */
+  trailing?: ReactNode;
+  size?: 's' | 'm' | 'l';
+  className?: string;
+}
+
+export const AvatarLabel = ({
+  avatar,
+  label,
+  sublabel,
+  trailing,
+  size = 'm',
+  className = '',
+}: AvatarLabelProps) => (
+  <div
+    className={[
+      'inline-flex items-center min-w-0',
+      size === 's' ? 'gap-2' : 'gap-3',
+      className,
+    ]
+      .filter(Boolean)
+      .join(' ')}
+  >
+    <span className="shrink-0">{avatar}</span>
+    <span className="flex-1 min-w-0">
+      <span
+        className={[
+          'block truncate text-app-ink dark:text-app-ink-dark font-medium',
+          size === 's' ? 'text-11' : 'text-13',
+        ].join(' ')}
+      >
+        {label}
+      </span>
+      {sublabel && (
+        <span
+          className={[
+            'block truncate text-app-mute dark:text-app-mute-dark',
+            size === 's' ? 'text-[10px]' : 'text-11',
+          ].join(' ')}
+        >
+          {sublabel}
+        </span>
+      )}
+    </span>
+    {trailing && <span className="shrink-0">{trailing}</span>}
+  </div>
+);

@@ -92,7 +92,7 @@ export {
 
 export { Item } from './Item';
 
-export { Avatar, AvatarGroup } from './Avatar';
+export { Avatar, AvatarGroup, AvatarLabel } from './Avatar';
 
 export {
   Popover,
