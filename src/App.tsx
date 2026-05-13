@@ -1,4 +1,5 @@
 import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom';
+import { ToastProvider } from '@jisr-hr/ds-web';
 import { SettingsShell } from './components/shell/SettingsShell';
 import { ShiftsPage } from './pages/ShiftsPage';
 import { ShiftsLayout } from './pages/ShiftsLayout';
@@ -14,6 +15,7 @@ import { NewTemplatePage } from './pages/NewTemplatePage';
 const basename = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 const App = () => (
+  <ToastProvider>
   <Router basename={basename}>
     <Routes>
       <Route path="/" element={<Navigate to="/settings/attendance/shifts" replace />} />
@@ -67,6 +69,7 @@ const App = () => (
       </Route>
     </Routes>
   </Router>
+  </ToastProvider>
 );
 
 export default App;

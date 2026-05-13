@@ -4,42 +4,45 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
+      // Colors aligned to real Wasl DS values (Figma file dENVT3cpolQRwvDxU35Jvs)
       colors: {
         app: {
-          bg: '#F9F8F4',
+          bg: '#F3F3F8',         // page bg (real DS)
           'bg-dark': '#0E0E0F',
           card: '#FFFFFF',
           'card-dark': '#161618',
-          ink: '#0B0B0C',
+          surface: '#F9F9FC',    // subdued surface (info card bg in DS)
+          ink: '#101014',         // primary text (real DS)
           'ink-dark': '#F2F2F2',
-          mute: '#5C5F66',
+          mute: '#45454D',        // secondary text (real DS)
           'mute-dark': '#9C9FA6',
-          faint: '#8A8D94',
+          faint: '#6B6B75',       // tertiary text (real DS)
           'faint-dark': '#6E7079',
-          line: 'rgba(11,11,12,0.08)',
-          'line-dark': 'rgba(255,255,255,0.10)',
-          subtle: '#F1EFE9',
+          line: 'rgba(0,0,0,0.12)',     // hairline (DS spec ~0.2 but softened for hairline width)
+          'line-dark': 'rgba(255,255,255,0.12)',
+          subtle: '#E8E8F0',      // background tint (real DS canvas-rest)
           'subtle-dark': '#1E1E22',
         },
         danger: {
-          bg: '#FBE9E7',
+          bg: '#FEE4E2',          // real DS
           'bg-dark': '#3A1A18',
-          ink: '#A32314',
+          ink: '#D92C20',         // real DS
           'ink-dark': '#FCA89C',
-          line: '#F4B7AE',
+          line: '#F04437',
         },
         warn: {
-          bg: '#FCEFD3',
+          bg: '#FDD890',          // real DS
           'bg-dark': '#3A2C0E',
-          ink: '#8A5A00',
+          ink: '#D7991F',         // real DS
           'ink-dark': '#F4C76A',
-          line: '#EAC780',
+          line: '#FCB222',
         },
         ok: {
-          bg: '#DEF1E2',
+          bg: '#D1FADF',          // real DS
           'bg-dark': '#10301A',
-          ink: '#16693C',
+          ink: '#027A48',         // real DS
           'ink-dark': '#7BD49C',
+          line: '#039754',
         },
         info: {
           bg: '#DEEAF8',
@@ -49,7 +52,7 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+        sans: ['Onest', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
       },
       fontSize: {
         '11': ['11px', { lineHeight: '14px' }],

@@ -1,12 +1,27 @@
+/**
+ * New Policy page — rebuilt with @jisr-hr/ds-web components.
+ * Break type is prominently featured (hero flow).
+ */
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { X } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { nanoid } from 'nanoid';
-import { Breadcrumb } from '../components/PageHeader';
-import { Card, CardSectionLabel } from '../components/primitives/Card';
-import { Button } from '../components/primitives/Button';
-import { Field } from '../components/primitives/Field';
-import { Chip } from '../components/primitives/Chip';
+import {
+  PageHeader,
+  SmartBreadcrumb,
+  Card,
+  CardSection,
+  Button,
+  Field,
+  Input,
+  Textarea,
+  Switch,
+  NumberInput,
+  SegmentedControl,
+  Tag,
+  Banner,
+  Separator,
+  useToast,
+} from '@jisr-hr/ds-web';
 import { useAppStore } from '../store';
 import type {
   BreakPolicy,
@@ -19,28 +34,37 @@ import type {
 
 type PolicyKind = 'overtime' | 'break' | 'clock_window' | 'excuse' | 'punch_correction';
 
-const labelFor = (k: PolicyKind) =>
-  k === 'overtime'
-    ? 'Overtime'
-    : k === 'break'
-      ? 'Break'
-      : k === 'clock_window'
-        ? 'Clock-in window'
-        : k === 'excuse'
-          ? 'Excuse'
-          : 'Punch correction';
-
-const tabUrlFor = (_k: PolicyKind) => '/settings/attendance/policies';
-
-type Common = {
-  name: string;
+const POLICY_TYPES: Array<{
+  id: PolicyKind;
+  label: string;
   description: string;
-  groupIds: string[];
-};
+  isNew?: boolean;
+}> = [
+  { id: 'overtime', label: 'Overtime', description: 'Rate multipliers and approval rules' },
+  {
+    id: 'break',
+    label: 'Break',
+    description: 'Paid/unpaid, schedule type, KSA compliance',
+    isNew: true,
+  },
+  {
+    id: 'clock_window',
+    label: 'Clock-in window',
+    description: 'Grace periods and geofence settings',
+    isNew: true,
+  },
+  { id: 'excuse', label: 'Excuse', description: 'Approval and monthly limits' },
+  { id: 'punch_correction', label: 'Punch correction', description: 'Approval and audit rules' },
+];
+
+const labelFor = (k: PolicyKind) => POLICY_TYPES.find((t) => t.id === k)!.label;
+
+type Common = { name: string; description: string; groupIds: string[] };
 
 export const NewPolicyPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const toast = useToast();
   const params = new URLSearchParams(location.search);
   const initialType = (params.get('type') as PolicyKind | null) ?? null;
 
@@ -67,11 +91,13 @@ export const NewPolicyPage = () => {
     defaultScheduleType: BreakPolicy['defaultScheduleType'];
     countTowardWorkHours: boolean;
     autoMandatePaidDuringHeatBan: boolean;
+    forceBreakAfter5h: boolean;
   }>({
     paid: 'unpaid',
     defaultScheduleType: 'flexible',
     countTowardWorkHours: false,
     autoMandatePaidDuringHeatBan: false,
+    forceBreakAfter5h: true,
   });
   const [cw, setCw] = useState({
     clockInWindowStart: '08:00',
@@ -94,7 +120,7 @@ export const NewPolicyPage = () => {
   const totalEmployees = useMemo(
     () =>
       common.groupIds.reduce(
-        (acc, id) => acc + (groups.find((g) => g.id === id)?.employeeCount ?? 0),
+        (acc, gid) => acc + (groups.find((g) => g.id === gid)?.employeeCount ?? 0),
         0,
       ),
     [common.groupIds, groups],
@@ -131,428 +157,421 @@ export const NewPolicyPage = () => {
         createExcusePolicy({ ...base, type: 'excuse', ...excuse } as ExcusePolicy);
         break;
       case 'punch_correction':
-        createPunchCorrectionPolicy({
-          ...base,
-          type: 'punch_correction',
-          ...punch,
-        } as PunchCorrectionPolicy);
+        createPunchCorrectionPolicy({ ...base, type: 'punch_correction', ...punch } as PunchCorrectionPolicy);
         break;
     }
-    navigate(tabUrlFor(kind));
+    toast.success('Policy created', `"${common.name.trim()}" is now available.`);
+    navigate('/settings/attendance/policies');
   };
 
   const canSave = kind !== null && common.name.trim().length > 0;
 
   return (
     <div className="pb-12">
-      <div className="px-5 sm:px-6 pt-5 pb-3">
-        <Breadcrumb
-          items={[
-            { label: 'Settings', to: '/settings' },
-            { label: 'Attendance' },
-            { label: 'Attendance policies', to: '/settings/attendance/policies' },
-            { label: 'New policy' },
-          ]}
-        />
-        <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 className="text-[18px] font-medium leading-tight">
-              {kind ? `New ${labelFor(kind).toLowerCase()} policy` : 'New policy'}
-            </h1>
-            <p className="text-13 text-app-mute dark:text-app-mute-dark mt-0.5">
-              Pick a policy type, then configure its rules and group assignment.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link
-              to="/settings/attendance/policies"
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg font-medium h-9 px-3.5 text-13 bg-white dark:bg-app-card-dark hairline hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
-            >
+      <PageHeader
+        breadcrumb={
+          <SmartBreadcrumb
+            items={[
+              { label: 'Settings', to: '/settings' },
+              { label: 'Attendance' },
+              { label: 'Attendance policies', to: '/settings/attendance/policies' },
+              { label: 'New policy' },
+            ]}
+          />
+        }
+        title={kind ? `New ${labelFor(kind).toLowerCase()} policy` : 'New policy'}
+        description="Pick a policy type, then configure its rules and group assignment."
+        border={false}
+        actions={
+          <>
+            <Button variant="secondary" onClick={() => navigate('/settings/attendance/policies')}>
               Discard
-            </Link>
+            </Button>
             <Button variant="primary" disabled={!canSave} onClick={onSave}>
               Create policy
             </Button>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <div className="px-5 sm:px-6 max-w-3xl space-y-4">
+        {/* ── Policy type picker ── */}
         <Card>
-          <CardSectionLabel>Policy type</CardSectionLabel>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {(['overtime', 'break', 'clock_window', 'excuse', 'punch_correction'] as PolicyKind[]).map(
-              (k) => {
-                const isNew = k === 'break' || k === 'clock_window';
-                return (
-                  <button
-                    key={k}
-                    type="button"
-                    onClick={() => setKind(k)}
-                    className={`text-left p-3 rounded-md hairline transition ${
-                      kind === k
-                        ? 'ring-2 ring-app-ink dark:ring-app-ink-dark border-transparent bg-app-subtle/40 dark:bg-app-subtle-dark/40'
-                        : 'bg-white dark:bg-app-card-dark hover:bg-app-subtle/40 dark:hover:bg-app-subtle-dark/40'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-13 font-medium">{labelFor(k)}</span>
-                      {isNew && <Chip tone="info">New</Chip>}
-                    </div>
-                  </button>
-                );
-              },
-            )}
-          </div>
-        </Card>
-
-        <Card>
-          <CardSectionLabel>Basics</CardSectionLabel>
-          <div className="space-y-3">
-            <Field label="Name">
-              <input
-                className="field-input"
-                value={common.name}
-                onChange={(e) => setCommon((c) => ({ ...c, name: e.target.value }))}
-                placeholder={kind ? `${labelFor(kind)} policy name` : 'Policy name'}
-              />
-            </Field>
-            <Field label="Description">
-              <textarea
-                rows={3}
-                className="field-input"
-                value={common.description}
-                onChange={(e) => setCommon((c) => ({ ...c, description: e.target.value }))}
-              />
-            </Field>
-          </div>
-        </Card>
-
-        <Card>
-          <CardSectionLabel>Apply to</CardSectionLabel>
-          <div className="text-13 font-medium mb-1.5">Groups</div>
-          <div className="flex flex-wrap gap-1.5 mb-3 min-h-[28px]">
-            {common.groupIds.length === 0 && (
-              <span className="text-13 text-app-mute dark:text-app-mute-dark">
-                No groups assigned.
-              </span>
-            )}
-            {common.groupIds.map((gid) => {
-              const g = groups.find((x) => x.id === gid);
-              if (!g) return null;
-              return (
-                <Chip key={gid} tone="gray" className="pl-2 pr-1">
-                  {g.name}
-                  <button
-                    type="button"
-                    onClick={() => toggleGroup(gid)}
-                    aria-label={`Remove ${g.name}`}
-                    className="size-4 inline-flex items-center justify-center rounded hover:bg-app-line"
-                  >
-                    <X className="size-3" />
-                  </button>
-                </Chip>
-              );
-            })}
-          </div>
-          <div className="text-11 text-app-mute dark:text-app-mute-dark mb-1.5">Add groups</div>
-          <div className="flex flex-wrap gap-1.5">
-            {groups
-              .filter((g) => !common.groupIds.includes(g.id))
-              .map((g) => (
+          <CardSection title="Policy type">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {POLICY_TYPES.map((pt) => (
                 <button
-                  key={g.id}
+                  key={pt.id}
                   type="button"
-                  onClick={() => toggleGroup(g.id)}
-                  className="inline-flex items-center gap-1 rounded-md hairline px-2 py-1 text-11 text-app-mute dark:text-app-mute-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark"
+                  onClick={() => setKind(pt.id)}
+                  className={[
+                    'text-left p-3 rounded-lg hairline transition',
+                    kind === pt.id
+                      ? 'ring-2 ring-app-ink dark:ring-app-ink-dark border-transparent bg-app-subtle/40 dark:bg-app-subtle-dark/40'
+                      : 'bg-white dark:bg-app-card-dark hover:bg-app-subtle/40 dark:hover:bg-app-subtle-dark/40',
+                  ].join(' ')}
                 >
-                  + {g.name} ({g.employeeCount})
+                  <span className="flex items-center gap-1.5 mb-0.5">
+                    <span className="text-13 font-medium text-app-ink dark:text-app-ink-dark">
+                      {pt.label}
+                    </span>
+                    {pt.isNew && <Tag appearance="info" size="sm">New</Tag>}
+                  </span>
+                  <span className="text-11 text-app-mute dark:text-app-mute-dark">
+                    {pt.description}
+                  </span>
                 </button>
               ))}
-          </div>
-          <p className="text-11 text-app-mute dark:text-app-mute-dark mt-3">
-            Total employees:{' '}
-            <span className="font-medium text-app-ink dark:text-app-ink-dark">{totalEmployees}</span>
-          </p>
+            </div>
+          </CardSection>
         </Card>
 
+        {/* ── Basics ── */}
+        <Card>
+          <CardSection title="Basics">
+            <div className="space-y-3">
+              <Field label="Name" required>
+                <Input
+                  value={common.name}
+                  onChange={(e) => setCommon((c) => ({ ...c, name: e.target.value }))}
+                  placeholder={kind ? `${labelFor(kind)} policy name` : 'Policy name'}
+                />
+              </Field>
+              <Field label="Description">
+                <Textarea
+                  rows={3}
+                  value={common.description}
+                  onChange={(e) => setCommon((c) => ({ ...c, description: e.target.value }))}
+                  placeholder="Optional description"
+                />
+              </Field>
+            </div>
+          </CardSection>
+        </Card>
+
+        {/* ── Break-specific config ── */}
+        {kind === 'break' && (
+          <>
+            <Card>
+              <CardSection title="Break type & behaviour">
+                <div className="space-y-4">
+                  <Field label="Paid" description="Whether break time is included in payroll.">
+                    <SegmentedControl
+                      value={breakP.paid}
+                      onChange={(v) => setBreakP((b) => ({ ...b, paid: v as BreakPolicy['paid'] }))}
+                      options={[
+                        { value: 'paid', label: 'Paid', description: 'Included in payroll' },
+                        { value: 'unpaid', label: 'Unpaid', description: 'Deducted from wages' },
+                        { value: 'mixed', label: 'Mixed', description: 'Per-instance setting' },
+                      ]}
+                    />
+                  </Field>
+
+                  <Separator />
+
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-13 font-medium text-app-ink dark:text-app-ink-dark">
+                        Counts toward work hours
+                      </p>
+                      <p className="text-11 text-app-mute dark:text-app-mute-dark mt-0.5">
+                        Break duration included in the daily work cap.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={breakP.countTowardWorkHours}
+                      onCheckedChange={(v) => setBreakP((b) => ({ ...b, countTowardWorkHours: v }))}
+                    />
+                  </div>
+                </div>
+              </CardSection>
+            </Card>
+
+            <Card>
+              <CardSection title="Schedule">
+                <Field
+                  label="Schedule type"
+                  description="Default shape applied when this policy is added to a shift preset."
+                >
+                  <SegmentedControl
+                    value={breakP.defaultScheduleType}
+                    onChange={(v) =>
+                      setBreakP((b) => ({ ...b, defaultScheduleType: v as BreakScheduleType }))
+                    }
+                    options={[
+                      { value: 'fixed', label: 'Fixed', description: 'Exact start time' },
+                      { value: 'flexible', label: 'Flexible', description: 'Within a window' },
+                      { value: 'mixed', label: 'Mixed', description: 'Employee chooses' },
+                    ]}
+                  />
+                </Field>
+              </CardSection>
+            </Card>
+
+            <Card>
+              <CardSection title="KSA compliance behaviour">
+                <div className="space-y-3">
+                  <Banner appearance="info" emphasis="low">
+                    These settings control how this policy interacts with KSA Labour Law requirements.
+                  </Banner>
+                  <div className="flex items-start justify-between gap-4 pt-1">
+                    <div>
+                      <span className="flex items-center gap-1.5">
+                        <p className="text-13 font-medium text-app-ink dark:text-app-ink-dark">
+                          Force break after 5 hours of work
+                        </p>
+                        <Tag appearance="danger" size="sm">Required</Tag>
+                      </span>
+                      <p className="text-11 text-app-mute dark:text-app-mute-dark mt-0.5">
+                        KSA Labour Law Art. 101 — mandatory for compliance.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={breakP.forceBreakAfter5h}
+                      onCheckedChange={(v) => setBreakP((b) => ({ ...b, forceBreakAfter5h: v }))}
+                    />
+                  </div>
+                  <Separator />
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-13 font-medium text-app-ink dark:text-app-ink-dark">
+                        Auto-mandate paid break during heat ban
+                      </p>
+                      <p className="text-11 text-app-mute dark:text-app-mute-dark mt-0.5">
+                        Outdoor work overlapping 12:00–15:00 triggers paid mandatory break.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={breakP.autoMandatePaidDuringHeatBan}
+                      onCheckedChange={(v) =>
+                        setBreakP((b) => ({ ...b, autoMandatePaidDuringHeatBan: v }))
+                      }
+                    />
+                  </div>
+                </div>
+              </CardSection>
+            </Card>
+          </>
+        )}
+
+        {/* ── Overtime-specific config ── */}
         {kind === 'overtime' && (
           <Card>
-            <CardSectionLabel>Overtime rules</CardSectionLabel>
-            <div className="grid sm:grid-cols-3 gap-3">
-              <Field label="Standard rate (×)">
-                <input
-                  type="number"
-                  step={0.1}
-                  className="field-input"
-                  value={overtime.paidRate}
-                  onChange={(e) => setOvertime((o) => ({ ...o, paidRate: Number(e.target.value) }))}
-                />
-              </Field>
-              <Field label="Holiday rate (×)">
-                <input
-                  type="number"
-                  step={0.1}
-                  className="field-input"
-                  value={overtime.holidayRate}
-                  onChange={(e) => setOvertime((o) => ({ ...o, holidayRate: Number(e.target.value) }))}
-                />
-              </Field>
-              <Field label="Time off in lieu (×)">
-                <input
-                  type="number"
-                  step={0.05}
-                  className="field-input"
-                  value={overtime.timeOffInLieuRate}
-                  onChange={(e) =>
-                    setOvertime((o) => ({ ...o, timeOffInLieuRate: Number(e.target.value) }))
-                  }
-                />
-              </Field>
-            </div>
-            <Toggle
-              className="mt-3"
-              label="Pre-approval required"
-              checked={overtime.preApprovalRequired}
-              onChange={(v) => setOvertime((o) => ({ ...o, preApprovalRequired: v }))}
-            />
-            <Field label="Auto OT after (minutes)" className="mt-3">
-              <input
-                type="number"
-                min={0}
-                className="field-input"
-                value={overtime.autoOvertimeAfterMinutes ?? 0}
-                onChange={(e) =>
-                  setOvertime((o) => ({
-                    ...o,
-                    autoOvertimeAfterMinutes: Number(e.target.value) || null,
-                  }))
-                }
-              />
-            </Field>
+            <CardSection title="Overtime rules">
+              <div className="space-y-4">
+                <div className="grid sm:grid-cols-3 gap-3">
+                  <Field label="Paid rate (×)">
+                    <NumberInput
+                      value={overtime.paidRate}
+                      onChange={(v) => setOvertime((o) => ({ ...o, paidRate: v }))}
+                      min={1}
+                      max={5}
+                      step={0.25}
+                    />
+                  </Field>
+                  <Field label="Holiday rate (×)">
+                    <NumberInput
+                      value={overtime.holidayRate}
+                      onChange={(v) => setOvertime((o) => ({ ...o, holidayRate: v }))}
+                      min={1}
+                      max={5}
+                      step={0.25}
+                    />
+                  </Field>
+                  <Field label="TOIL rate (×)">
+                    <NumberInput
+                      value={overtime.timeOffInLieuRate}
+                      onChange={(v) => setOvertime((o) => ({ ...o, timeOffInLieuRate: v }))}
+                      min={0}
+                      max={2}
+                      step={0.25}
+                    />
+                  </Field>
+                </div>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-13 font-medium text-app-ink dark:text-app-ink-dark">
+                      Pre-approval required
+                    </p>
+                    <p className="text-11 text-app-mute dark:text-app-mute-dark mt-0.5">
+                      Overtime requests need manager sign-off before being counted.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={overtime.preApprovalRequired}
+                    onCheckedChange={(v) => setOvertime((o) => ({ ...o, preApprovalRequired: v }))}
+                  />
+                </div>
+              </div>
+            </CardSection>
           </Card>
         )}
 
-        {kind === 'break' && (
-          <Card>
-            <CardSectionLabel>Break rules</CardSectionLabel>
-            <div className="text-13 font-medium mb-1.5">Paid</div>
-            <div className="flex gap-2 flex-wrap mb-4">
-              {(['paid', 'unpaid', 'mixed'] as const).map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setBreakP((b) => ({ ...b, paid: p }))}
-                  className={`px-3 py-1.5 rounded-md text-13 hairline capitalize ${
-                    breakP.paid === p
-                      ? 'bg-app-ink text-white border-app-ink dark:bg-app-ink-dark dark:text-app-ink'
-                      : 'bg-white dark:bg-app-card-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark'
-                  }`}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-            <div className="text-13 font-medium mb-1.5">Schedule type</div>
-            <div className="flex gap-2 flex-wrap mb-4">
-              {(['fixed', 'flexible', 'anchored', 'mixed'] as Array<BreakScheduleType | 'mixed'>).map(
-                (s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setBreakP((b) => ({ ...b, defaultScheduleType: s }))}
-                    className={`px-3 py-1.5 rounded-md text-13 hairline capitalize ${
-                      breakP.defaultScheduleType === s
-                        ? 'bg-app-ink text-white border-app-ink dark:bg-app-ink-dark dark:text-app-ink'
-                        : 'bg-white dark:bg-app-card-dark hover:bg-app-subtle dark:hover:bg-app-subtle-dark'
-                    }`}
-                  >
-                    {s}
-                  </button>
-                ),
-              )}
-            </div>
-            <Toggle
-              label="Counts toward work hours"
-              checked={breakP.countTowardWorkHours}
-              onChange={(v) => setBreakP((b) => ({ ...b, countTowardWorkHours: v }))}
-            />
-            <Toggle
-              className="mt-2"
-              label="Auto-mandate paid during heat ban"
-              hint="When outdoor work overlaps the 12:00–15:00 heat ban window, this break becomes paid and mandatory."
-              checked={breakP.autoMandatePaidDuringHeatBan}
-              onChange={(v) => setBreakP((b) => ({ ...b, autoMandatePaidDuringHeatBan: v }))}
-            />
-          </Card>
-        )}
-
+        {/* ── Clock-window-specific config ── */}
         {kind === 'clock_window' && (
           <Card>
-            <CardSectionLabel>Clock-in window</CardSectionLabel>
-            <div className="grid sm:grid-cols-2 gap-3">
-              <Field label="Clock-in window starts">
-                <input
-                  type="time"
-                  className="field-input"
-                  value={cw.clockInWindowStart}
-                  onChange={(e) => setCw((c) => ({ ...c, clockInWindowStart: e.target.value }))}
-                />
-              </Field>
-              <Field label="Clock-in window ends">
-                <input
-                  type="time"
-                  className="field-input"
-                  value={cw.clockInWindowEnd}
-                  onChange={(e) => setCw((c) => ({ ...c, clockInWindowEnd: e.target.value }))}
-                />
-              </Field>
-              <Field label="Clock-out window starts">
-                <input
-                  type="time"
-                  className="field-input"
-                  value={cw.clockOutWindowStart}
-                  onChange={(e) => setCw((c) => ({ ...c, clockOutWindowStart: e.target.value }))}
-                />
-              </Field>
-              <Field label="Clock-out window ends">
-                <input
-                  type="time"
-                  className="field-input"
-                  value={cw.clockOutWindowEnd}
-                  onChange={(e) => setCw((c) => ({ ...c, clockOutWindowEnd: e.target.value }))}
-                />
-              </Field>
-              <Field label="Grace minutes">
-                <input
-                  type="number"
-                  min={0}
-                  className="field-input"
-                  value={cw.clockInGraceMinutes}
-                  onChange={(e) =>
-                    setCw((c) => ({ ...c, clockInGraceMinutes: Number(e.target.value) }))
-                  }
-                />
-              </Field>
-              <Field label="Allowed shortage (minutes)">
-                <input
-                  type="number"
-                  min={0}
-                  className="field-input"
-                  value={cw.allowedShortageMinutes}
-                  onChange={(e) =>
-                    setCw((c) => ({ ...c, allowedShortageMinutes: Number(e.target.value) }))
-                  }
-                />
-              </Field>
-            </div>
-            <Toggle
-              className="mt-3"
-              label="Geofence required"
-              checked={cw.geofenceRequired}
-              onChange={(v) => setCw((c) => ({ ...c, geofenceRequired: v }))}
-            />
-            {cw.geofenceRequired && (
-              <Field label="Geofence radius (m)" className="mt-2">
-                <input
-                  type="number"
-                  min={20}
-                  className="field-input"
-                  value={cw.geofenceRadiusMeters}
-                  onChange={(e) =>
-                    setCw((c) => ({ ...c, geofenceRadiusMeters: Number(e.target.value) }))
-                  }
-                />
-              </Field>
-            )}
-            <Toggle
-              className="mt-2"
-              label="Restrict to office IP ranges"
-              checked={cw.ipRestricted}
-              onChange={(v) => setCw((c) => ({ ...c, ipRestricted: v }))}
-            />
+            <CardSection title="Clock-in/out windows">
+              <div className="space-y-4">
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <Field label="Clock-in window start">
+                    <Input
+                      type="time"
+                      value={cw.clockInWindowStart}
+                      onChange={(e) => setCw((c) => ({ ...c, clockInWindowStart: e.target.value }))}
+                    />
+                  </Field>
+                  <Field label="Clock-in window end">
+                    <Input
+                      type="time"
+                      value={cw.clockInWindowEnd}
+                      onChange={(e) => setCw((c) => ({ ...c, clockInWindowEnd: e.target.value }))}
+                    />
+                  </Field>
+                  <Field label="Clock-out window start">
+                    <Input
+                      type="time"
+                      value={cw.clockOutWindowStart}
+                      onChange={(e) => setCw((c) => ({ ...c, clockOutWindowStart: e.target.value }))}
+                    />
+                  </Field>
+                  <Field label="Clock-out window end">
+                    <Input
+                      type="time"
+                      value={cw.clockOutWindowEnd}
+                      onChange={(e) => setCw((c) => ({ ...c, clockOutWindowEnd: e.target.value }))}
+                    />
+                  </Field>
+                </div>
+                <Field label="Grace period (minutes)">
+                  <NumberInput
+                    value={cw.clockInGraceMinutes}
+                    onChange={(v) => setCw((c) => ({ ...c, clockInGraceMinutes: v }))}
+                    min={0}
+                    max={60}
+                    step={5}
+                    endAddon="min"
+                  />
+                </Field>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-13 font-medium text-app-ink dark:text-app-ink-dark">
+                      Geofence required
+                    </p>
+                    <p className="text-11 text-app-mute dark:text-app-mute-dark mt-0.5">
+                      Employee must be on-site (GPS) to clock in.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={cw.geofenceRequired}
+                    onCheckedChange={(v) => setCw((c) => ({ ...c, geofenceRequired: v }))}
+                  />
+                </div>
+              </div>
+            </CardSection>
           </Card>
         )}
 
-        {kind === 'excuse' && (
+        {/* ── Excuse / Punch correction config ── */}
+        {(kind === 'excuse' || kind === 'punch_correction') && (
           <Card>
-            <CardSectionLabel>Excuse rules</CardSectionLabel>
-            <Toggle
-              label="Approval required"
-              checked={excuse.approvalRequired}
-              onChange={(v) => setExcuse((e) => ({ ...e, approvalRequired: v }))}
-            />
-            <Field label="Max per month" className="mt-3">
-              <input
-                type="number"
-                min={0}
-                className="field-input"
-                value={excuse.maxPerMonth}
-                onChange={(e) => setExcuse((s) => ({ ...s, maxPerMonth: Number(e.target.value) }))}
-              />
-            </Field>
+            <CardSection title={kind === 'excuse' ? 'Excuse rules' : 'Punch correction rules'}>
+              <div className="space-y-4">
+                <Field label="Max per month">
+                  <NumberInput
+                    value={kind === 'excuse' ? excuse.maxPerMonth : punch.maxPerMonth}
+                    onChange={(v) =>
+                      kind === 'excuse'
+                        ? setExcuse((e) => ({ ...e, maxPerMonth: v }))
+                        : setPunch((p) => ({ ...p, maxPerMonth: v }))
+                    }
+                    min={1}
+                    max={30}
+                    step={1}
+                  />
+                </Field>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-13 font-medium text-app-ink dark:text-app-ink-dark">
+                      Approval required
+                    </p>
+                    <p className="text-11 text-app-mute dark:text-app-mute-dark mt-0.5">
+                      Manager must approve before the request takes effect.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={kind === 'excuse' ? excuse.approvalRequired : punch.approvalRequired}
+                    onCheckedChange={(v) =>
+                      kind === 'excuse'
+                        ? setExcuse((e) => ({ ...e, approvalRequired: v }))
+                        : setPunch((p) => ({ ...p, approvalRequired: v }))
+                    }
+                  />
+                </div>
+              </div>
+            </CardSection>
           </Card>
         )}
 
-        {kind === 'punch_correction' && (
+        {/* ── Apply to (groups) — shown for all types ── */}
+        {kind !== null && (
           <Card>
-            <CardSectionLabel>Punch correction rules</CardSectionLabel>
-            <Toggle
-              label="Approval required"
-              checked={punch.approvalRequired}
-              onChange={(v) => setPunch((p) => ({ ...p, approvalRequired: v }))}
-            />
-            <Field label="Max per month" className="mt-3">
-              <input
-                type="number"
-                min={0}
-                className="field-input"
-                value={punch.maxPerMonth}
-                onChange={(e) => setPunch((s) => ({ ...s, maxPerMonth: Number(e.target.value) }))}
-              />
-            </Field>
+            <CardSection title="Apply to">
+              <div className="space-y-3">
+                <div>
+                  <p className="text-13 font-medium text-app-ink dark:text-app-ink-dark mb-1.5">
+                    Assigned groups
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 min-h-[28px]">
+                    {common.groupIds.length === 0 ? (
+                      <span className="text-13 text-app-mute dark:text-app-mute-dark">
+                        No groups assigned.
+                      </span>
+                    ) : (
+                      common.groupIds.map((gid) => {
+                        const g = groups.find((x) => x.id === gid);
+                        if (!g) return null;
+                        return (
+                          <Tag
+                            key={gid}
+                            appearance="neutral"
+                            size="sm"
+                            onDismiss={() => toggleGroup(gid)}
+                          >
+                            {g.name}
+                          </Tag>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-11 text-app-mute dark:text-app-mute-dark mb-1.5">Add groups</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {groups
+                      .filter((g) => !common.groupIds.includes(g.id))
+                      .map((g) => (
+                        <Button
+                          key={g.id}
+                          variant="tertiary"
+                          size="sm"
+                          onClick={() => toggleGroup(g.id)}
+                        >
+                          + {g.name} ({g.employeeCount})
+                        </Button>
+                      ))}
+                  </div>
+                </div>
+                <p className="text-11 text-app-mute dark:text-app-mute-dark">
+                  Total employees:{' '}
+                  <span className="font-medium text-app-ink dark:text-app-ink-dark">
+                    {totalEmployees}
+                  </span>
+                </p>
+              </div>
+            </CardSection>
           </Card>
         )}
       </div>
     </div>
   );
 };
-
-const Toggle = ({
-  label,
-  hint,
-  checked,
-  onChange,
-  className = '',
-}: {
-  label: string;
-  hint?: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-  className?: string;
-}) => (
-  <label className={`flex items-start justify-between gap-3 ${className}`}>
-    <span className="min-w-0">
-      <span className="block text-13 font-medium">{label}</span>
-      {hint && (
-        <span className="block text-11 text-app-mute dark:text-app-mute-dark mt-0.5">{hint}</span>
-      )}
-    </span>
-    <span
-      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition ${
-        checked
-          ? 'bg-app-ink dark:bg-app-ink-dark'
-          : 'bg-app-subtle dark:bg-app-subtle-dark hairline'
-      }`}
-      onClick={() => onChange(!checked)}
-      role="switch"
-      aria-checked={checked}
-    >
-      <span
-        className={`inline-block size-4 rounded-full bg-white shadow-sm transition ${
-          checked ? 'translate-x-4' : 'translate-x-0.5'
-        }`}
-      />
-    </span>
-  </label>
-);
