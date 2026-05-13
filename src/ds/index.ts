@@ -81,6 +81,28 @@ export {
 
 export { SidebarNav } from './Sidebar';
 
+export {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from './Dropdown';
+
+export { Item } from './Item';
+
+export { Avatar, AvatarGroup } from './Avatar';
+
+export {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverHeader,
+  PopoverBody,
+  PopoverFooter,
+} from './Popover';
+
 // Organisms
 export { Table } from './Table';
 export type { TableColumn } from './Table';
