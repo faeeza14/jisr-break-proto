@@ -123,5 +123,5 @@ export type { DateRange } from './Calendar';
 export { CalendarPopover } from './CalendarPopover';
 
 // Organisms
-export { Table } from './Table';
-export type { TableColumn } from './Table';
+export { Table, TableBulkActions } from './Table';
+export type { TableColumn, SortDirection } from './Table';

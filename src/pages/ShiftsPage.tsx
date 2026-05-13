@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowDown, ArrowUp, CalendarRange, Clock, Download, Plus, Search } from 'lucide-react';
+import { CalendarRange, Clock, Download, Plus, Search } from 'lucide-react';
 import {
   Button,
   Card,
@@ -80,27 +80,38 @@ const PresetsList = () => {
   const navigate = useNavigate();
   const [q, setQ] = useState('');
   const [showName, setShowName] = useState(true);
-  const [breakSort, setBreakSort] = useState<SortDir | null>(null);
+  // Built-in DS Table sort state — replaces the previous "sort by total break duration" toggle row
+  const [sortKey, setSortKey] = useState<string | undefined>(undefined);
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
 
   const list = useMemo(() => Object.values(presets), [presets]);
   const filtered = list.filter((p) => p.nameEn.toLowerCase().includes(q.toLowerCase()));
 
   const sorted = useMemo(() => {
-    if (!breakSort) return filtered;
-    return [...filtered].sort((a, b) => {
-      const da = totalBreakMinutes(a.breaks);
-      const db = totalBreakMinutes(b.breaks);
-      return breakSort === 'asc' ? da - db : db - da;
-    });
-  }, [filtered, breakSort]);
+    if (!sortKey) return filtered;
+    const cmp = (a: ShiftPreset, b: ShiftPreset) => {
+      let va: string | number = '';
+      let vb: string | number = '';
+      if (sortKey === 'name') {
+        va = a.nameEn.toLowerCase();
+        vb = b.nameEn.toLowerCase();
+      } else if (sortKey === 'duration') {
+        va = a.workDurationMinutes;
+        vb = b.workDurationMinutes;
+      } else if (sortKey === 'breaks') {
+        va = totalBreakMinutes(a.breaks);
+        vb = totalBreakMinutes(b.breaks);
+      }
+      const r = va > vb ? 1 : va < vb ? -1 : 0;
+      return sortDir === 'asc' ? r : -r;
+    };
+    return [...filtered].sort(cmp);
+  }, [filtered, sortKey, sortDir]);
 
   const cwName = (id: string) => clockWindowPolicies.find((c) => c.id === id)?.name ?? '—';
   const otName = (id: string) => overtimePolicies.find((c) => c.id === id)?.name ?? '—';
 
   const date = new Date(ui.currentDate);
-
-  const toggleBreakSort = () =>
-    setBreakSort((d) => (d === null ? 'desc' : d === 'desc' ? 'asc' : null));
 
   const cols: TableColumn<ShiftPreset>[] = [
     {
@@ -115,6 +126,7 @@ const PresetsList = () => {
       key: 'name',
       header: 'Shift',
       width: 'minmax(180px,1.4fr)',
+      sortable: true,
       render: (p) => {
         const startMin = parseHHMM(p.startTime);
         const sched = deriveSchedule(p, breakPolicies);
@@ -134,6 +146,7 @@ const PresetsList = () => {
       key: 'duration',
       header: 'Duration',
       width: '80px',
+      sortable: true,
       render: (p) => (
         <span className="text-app-mute dark:text-app-mute-dark">{fmtDuration(p.workDurationMinutes)}</span>
       ),
@@ -142,6 +155,7 @@ const PresetsList = () => {
       key: 'breaks',
       header: 'Breaks',
       width: 'minmax(180px,1.2fr)',
+      sortable: true,
       render: (p) => (
         <span className="min-w-0">
           <span className="hidden min-[900px]:inline">
@@ -190,9 +204,6 @@ const PresetsList = () => {
     },
   ];
 
-  // Override the "Breaks" header with a sort toggle
-  cols[3].header = '';
-
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -206,7 +217,7 @@ const PresetsList = () => {
           />
         </div>
         <label className="flex items-center gap-2 text-13 text-app-mute dark:text-app-mute-dark cursor-pointer">
-          <Checkbox checked={showName} onCheckedChange={setShowName} size="sm" />
+          <Checkbox checked={showName} onCheckedChange={setShowName} />
           Show shift name
         </label>
         <Button variant="secondary" size="sm" leadingIcon={<Download className="size-3.5" />}>
@@ -222,25 +233,21 @@ const PresetsList = () => {
         </Button>
       </div>
 
-      <div className="flex items-center gap-2 text-11 tracking-[0.08em] uppercase text-app-faint dark:text-app-faint-dark font-medium px-1">
-        <span>Sort breaks by total duration:</span>
-        <button
-          type="button"
-          onClick={toggleBreakSort}
-          className="inline-flex items-center gap-1 hover:text-app-ink dark:hover:text-app-ink-dark"
-        >
-          {breakSort === 'asc' ? <><ArrowUp className="size-3" /> Asc</> : breakSort === 'desc' ? <><ArrowDown className="size-3" /> Desc</> : 'None'}
-        </button>
-      </div>
-
       <Table
         columns={cols}
         data={sorted}
         getRowKey={(p) => p.id}
         onRowClick={(p) => navigate(`/settings/attendance/shifts/presets/${p.id}`)}
-        emptyState={
-          <p className="text-13 text-app-mute dark:text-app-mute-dark">No shift presets match.</p>
-        }
+        sortKey={sortKey}
+        sortDirection={sortDir}
+        onSortChange={(k, d) => {
+          setSortKey(k);
+          setSortDir(d);
+        }}
+        emptyState={{
+          title: 'No shift presets',
+          description: q ? 'Try a different search term.' : 'Add one to get started.',
+        }}
       />
       <BreakIndicatorLegend />
     </div>
