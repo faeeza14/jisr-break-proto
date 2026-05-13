@@ -109,6 +109,12 @@ export { Empty } from './Empty';
 
 export { Link } from './Link';
 
+export { Progress } from './Progress';
+
+export { Pagination } from './Pagination';
+
+export { Slider } from './Slider';
+
 // Organisms
 export { Table } from './Table';
 export type { TableColumn } from './Table';
