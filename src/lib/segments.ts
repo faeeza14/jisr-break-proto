@@ -1,4 +1,7 @@
-import type { BreakInstance, BreakPolicy, ShiftPreset } from '../types';
+// R1 — break behaviour flags now live directly on BreakInstance, so deriveSchedule
+// no longer needs a BreakPolicy[] lookup. The second argument is kept for API
+// compatibility with callers that haven't been updated yet (it's ignored).
+import type { BreakInstance, ShiftPreset } from '../types';
 import { parseHHMM } from './time';
 
 export type TrackSegment = {
@@ -31,16 +34,14 @@ const breakAnchorMin = (b: BreakInstance, shiftStartMin: number): number | null 
   return null;
 };
 
-export const deriveSchedule = (p: ShiftPreset, breakPolicies: BreakPolicy[]): DerivedSchedule => {
+export const deriveSchedule = (p: ShiftPreset, _unused?: unknown): DerivedSchedule => {
   const startMin = parseHHMM(p.startTime);
-  const policyMap = Object.fromEntries(breakPolicies.map((bp) => [bp.id, bp]));
 
   const fixedBreaks = p.breaks
     .filter((b) => b.scheduleType !== 'flexible')
     .map((b) => {
-      const policy = policyMap[b.breakPolicyId];
-      const counts = policy?.countTowardWorkHours ?? false;
-      const paid = b.paidOverride ?? policy?.paid === 'paid';
+      const counts = b.countTowardWorkHours;
+      const paid = b.paid === 'paid';
       const anchor = breakAnchorMin(b, startMin) ?? startMin;
       return { b, anchor, duration: b.durationMinutes, counts, paid };
     })
@@ -49,12 +50,7 @@ export const deriveSchedule = (p: ShiftPreset, breakPolicies: BreakPolicy[]): De
 
   const flexibleBreaks = p.breaks
     .filter((b) => b.scheduleType === 'flexible')
-    .map((b) => {
-      const policy = policyMap[b.breakPolicyId];
-      const counts = policy?.countTowardWorkHours ?? false;
-      const paid = b.paidOverride ?? policy?.paid === 'paid';
-      return { b, counts, paid };
-    });
+    .map((b) => ({ b, counts: b.countTowardWorkHours, paid: b.paid === 'paid' }));
 
   const segments: TrackSegment[] = [];
   const breakInstants: DerivedSchedule['breakInstants'] = [];

@@ -15,18 +15,23 @@ export type EmployeeProfile = {
   observesRamadan: boolean;
 };
 
+// R1 — break time is fully inline on the shift preset (no reusable BreakPolicy).
 export type BreakInstance = {
   id: string;
   name: string;
-  breakPolicyId: string;
   scheduleType: BreakScheduleType;
   fixedTime?: string;
   flexibleWindow?: { start: string; end: string };
   anchoredOffsetMinutes?: number;
   durationMinutes: number;
-  paidOverride?: boolean;
+  // Behaviour fields previously read from BreakPolicy:
+  paid: 'paid' | 'unpaid' | 'mixed';
+  countTowardWorkHours: boolean;
+  autoMandatePaidDuringHeatBan: boolean;
+  forceBreakAfter5h: boolean;
 };
 
+// R1 — clocking rules live directly on the shift preset (no ClockWindowPolicy).
 export type ShiftPreset = {
   id: string;
   nameEn: string;
@@ -36,7 +41,17 @@ export type ShiftPreset = {
   startTime: string;
   workDurationMinutes: number;
   breaks: BreakInstance[];
-  clockWindowPolicyId: string;
+  // Inline clocking rules (formerly ClockWindowPolicy):
+  clockInWindowStart: string;
+  clockInWindowEnd: string;
+  clockOutWindowStart: string;
+  clockOutWindowEnd: string;
+  clockInGraceMinutes: number;
+  allowedShortageMinutes: number;
+  geofenceRequired: boolean;
+  geofenceRadiusMeters?: number;
+  ipRestricted: boolean;
+  // Still reusable:
   overtimePolicyId: string;
   usedInTemplateIds: string[];
 };
@@ -103,27 +118,7 @@ export type OvertimePolicy = AttendancePolicyBase & {
   autoOvertimeAfterMinutes: number | null;
 };
 
-export type BreakPolicy = AttendancePolicyBase & {
-  type: 'break';
-  paid: 'paid' | 'unpaid' | 'mixed';
-  countTowardWorkHours: boolean;
-  defaultScheduleType: BreakScheduleType | 'mixed';
-  autoMandatePaidDuringHeatBan: boolean;
-  forceBreakAfter5h?: boolean;
-};
-
-export type ClockWindowPolicy = AttendancePolicyBase & {
-  type: 'clock_window';
-  clockInWindowStart: string;
-  clockInWindowEnd: string;
-  clockOutWindowStart: string;
-  clockOutWindowEnd: string;
-  clockInGraceMinutes: number;
-  allowedShortageMinutes: number;
-  geofenceRequired: boolean;
-  geofenceRadiusMeters: number;
-  ipRestricted: boolean;
-};
+// R1 — BreakPolicy + ClockWindowPolicy removed (now inline on ShiftPreset/BreakInstance).
 
 export type ExcusePolicy = AttendancePolicyBase & {
   type: 'excuse';
@@ -139,8 +134,6 @@ export type PunchCorrectionPolicy = AttendancePolicyBase & {
 
 export type AttendancePolicy =
   | OvertimePolicy
-  | BreakPolicy
-  | ClockWindowPolicy
   | ExcusePolicy
   | PunchCorrectionPolicy;
 

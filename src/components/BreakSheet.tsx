@@ -1,28 +1,46 @@
+/**
+ * R1 BreakSheet — fully inline break editor.
+ * Break time has no reusable policy in R1; every field lives directly on
+ * the BreakInstance attached to the parent ShiftPreset.
+ */
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { nanoid } from 'nanoid';
-import { Button } from './primitives/Button';
-import { Field } from './primitives/Field';
-import type { BreakInstance, BreakPolicy, BreakScheduleType } from '../types';
+import { Button, Field, Input, NumberInput, Switch, Separator } from '@jisr-hr/ds-web';
+import type { BreakInstance, BreakScheduleType } from '../types';
 
 type Props = {
   open: boolean;
   onClose: () => void;
   onSave: (b: BreakInstance) => void;
   initial?: BreakInstance | null;
-  breakPolicies: BreakPolicy[];
 };
 
 const blank = (): BreakInstance => ({
   id: `bk-${nanoid(6)}`,
   name: 'Break',
-  breakPolicyId: 'bp2',
   scheduleType: 'flexible',
   flexibleWindow: { start: '09:00', end: '16:00' },
   durationMinutes: 15,
+  paid: 'unpaid',
+  countTowardWorkHours: false,
+  autoMandatePaidDuringHeatBan: false,
+  forceBreakAfter5h: true,
 });
 
-export const BreakSheet = ({ open, onClose, onSave, initial, breakPolicies }: Props) => {
+const PAID_OPTIONS = [
+  { value: 'paid', label: 'Paid' },
+  { value: 'unpaid', label: 'Unpaid' },
+  { value: 'mixed', label: 'Mixed' },
+] as const;
+
+const SCHEDULE_OPTIONS = [
+  { value: 'fixed', label: 'Fixed' },
+  { value: 'flexible', label: 'Flexible' },
+  { value: 'anchored', label: 'Anchored' },
+] as const;
+
+export const BreakSheet = ({ open, onClose, onSave, initial }: Props) => {
   const [draft, setDraft] = useState<BreakInstance>(initial ?? blank());
 
   useEffect(() => {
@@ -35,7 +53,12 @@ export const BreakSheet = ({ open, onClose, onSave, initial, breakPolicies }: Pr
 
   const setSchedule = (kind: BreakScheduleType) => {
     if (kind === 'fixed') {
-      update({ scheduleType: 'fixed', fixedTime: draft.fixedTime ?? '12:00', flexibleWindow: undefined, anchoredOffsetMinutes: undefined });
+      update({
+        scheduleType: 'fixed',
+        fixedTime: draft.fixedTime ?? '12:00',
+        flexibleWindow: undefined,
+        anchoredOffsetMinutes: undefined,
+      });
     } else if (kind === 'flexible') {
       update({
         scheduleType: 'flexible',
@@ -53,13 +76,45 @@ export const BreakSheet = ({ open, onClose, onSave, initial, breakPolicies }: Pr
     }
   };
 
+  // Small inline segmented picker — keeps the file self-contained
+  const Seg = <T extends string>({
+    value,
+    onChange,
+    options,
+  }: {
+    value: T;
+    onChange: (v: T) => void;
+    options: readonly { value: T; label: string }[];
+  }) => (
+    <div className="inline-flex rounded-lg hairline p-0.5 bg-white dark:bg-app-card-dark">
+      {options.map((o) => {
+        const active = o.value === value;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            onClick={() => onChange(o.value)}
+            className={[
+              'px-3 h-8 text-13 rounded-md transition-colors',
+              active
+                ? 'bg-app-ink text-white dark:bg-app-ink-dark dark:text-app-bg-dark'
+                : 'text-app-mute dark:text-app-mute-dark hover:bg-app-surface dark:hover:bg-app-subtle-dark',
+            ].join(' ')}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+
   return (
     <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-label={initial ? 'Edit break' : 'Add break'}
-        className="absolute right-0 top-0 bottom-0 w-full sm:w-[420px] bg-white dark:bg-app-card-dark flex flex-col"
+        className="absolute right-0 top-0 bottom-0 w-full sm:w-[440px] bg-white dark:bg-app-card-dark flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <header className="px-5 py-3.5 border-b-hair border-app-line dark:border-app-line-dark flex items-center justify-between">
@@ -80,56 +135,37 @@ export const BreakSheet = ({ open, onClose, onSave, initial, breakPolicies }: Pr
         </header>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
-          <Field label="Name">
-            <input
-              className="field-input"
+          <Field label="Name" required>
+            <Input
               value={draft.name}
               onChange={(e) => update({ name: e.target.value })}
+              placeholder="e.g. Lunch"
             />
           </Field>
-          <Field label="Break policy" hint="Defines paid/unpaid behaviour and group assignment.">
-            <select
-              className="field-input"
-              value={draft.breakPolicyId}
-              onChange={(e) => update({ breakPolicyId: e.target.value })}
-            >
-              {breakPolicies.map((bp) => (
-                <option key={bp.id} value={bp.id}>
-                  {bp.name} · {bp.paid}
-                </option>
-              ))}
-            </select>
+
+          <Field
+            label="Paid"
+            description="Whether this break counts toward payroll."
+          >
+            <Seg
+              value={draft.paid}
+              onChange={(v) => update({ paid: v })}
+              options={PAID_OPTIONS}
+            />
           </Field>
 
-          <div>
-            <div className="text-13 font-medium mb-1.5">Schedule</div>
-            <div className="grid grid-cols-3 gap-2">
-              {(['fixed', 'flexible', 'anchored'] as BreakScheduleType[]).map((k) => (
-                <button
-                  key={k}
-                  type="button"
-                  onClick={() => setSchedule(k)}
-                  className={`px-2 py-1.5 rounded-md text-13 hairline text-center capitalize ${
-                    draft.scheduleType === k
-                      ? 'bg-app-ink text-white border-app-ink dark:bg-app-ink-dark dark:text-app-ink'
-                      : 'bg-white dark:bg-app-card-dark hover:bg-app-surface dark:hover:bg-app-subtle-dark'
-                  }`}
-                >
-                  {k}
-                </button>
-              ))}
-            </div>
-            <p className="text-11 text-app-mute dark:text-app-mute-dark mt-1.5">
-              Fixed times happen at a set clock time. Flexible breaks can be taken any time within a window.
-              Anchored breaks happen at an offset from clock-in.
-            </p>
-          </div>
+          <Field label="Schedule">
+            <Seg
+              value={draft.scheduleType}
+              onChange={(v) => setSchedule(v)}
+              options={SCHEDULE_OPTIONS}
+            />
+          </Field>
 
           {draft.scheduleType === 'fixed' && (
             <Field label="Fixed time">
-              <input
+              <Input
                 type="time"
-                className="field-input"
                 value={draft.fixedTime ?? '12:00'}
                 onChange={(e) => update({ fixedTime: e.target.value })}
               />
@@ -138,9 +174,8 @@ export const BreakSheet = ({ open, onClose, onSave, initial, breakPolicies }: Pr
           {draft.scheduleType === 'flexible' && (
             <div className="grid grid-cols-2 gap-3">
               <Field label="Window starts">
-                <input
+                <Input
                   type="time"
-                  className="field-input"
                   value={draft.flexibleWindow?.start ?? '09:00'}
                   onChange={(e) =>
                     update({
@@ -153,9 +188,8 @@ export const BreakSheet = ({ open, onClose, onSave, initial, breakPolicies }: Pr
                 />
               </Field>
               <Field label="Window ends">
-                <input
+                <Input
                   type="time"
-                  className="field-input"
                   value={draft.flexibleWindow?.end ?? '16:00'}
                   onChange={(e) =>
                     update({
@@ -170,43 +204,75 @@ export const BreakSheet = ({ open, onClose, onSave, initial, breakPolicies }: Pr
             </div>
           )}
           {draft.scheduleType === 'anchored' && (
-            <Field label="Minutes after clock-in">
-              <input
-                type="number"
-                min={0}
-                step={15}
-                className="field-input"
+            <Field label="Minutes after clock-in" description="Offset from the start of the shift.">
+              <NumberInput
                 value={draft.anchoredOffsetMinutes ?? 240}
-                onChange={(e) => update({ anchoredOffsetMinutes: Number(e.target.value) })}
+                onChange={(v) => update({ anchoredOffsetMinutes: v })}
+                min={0}
+                max={600}
+                step={15}
+                endAddon="min"
               />
             </Field>
           )}
 
-          <Field label="Duration (minutes)">
-            <input
-              type="number"
-              min={5}
-              step={5}
-              className="field-input"
+          <Field label="Duration">
+            <NumberInput
               value={draft.durationMinutes}
-              onChange={(e) => update({ durationMinutes: Number(e.target.value) })}
+              onChange={(v) => update({ durationMinutes: v })}
+              min={5}
+              max={120}
+              step={5}
+              endAddon="min"
             />
           </Field>
 
-          <label className="flex items-center justify-between gap-3 px-3 py-2 hairline rounded-md">
+          <Separator />
+
+          <div className="flex items-start justify-between gap-4">
             <div>
-              <div className="text-13 font-medium">Paid override</div>
-              <div className="text-11 text-app-mute dark:text-app-mute-dark">
-                Force this break to be paid regardless of policy default.
-              </div>
+              <p className="text-13 font-medium text-app-ink dark:text-app-ink-dark">
+                Counts toward work hours
+              </p>
+              <p className="text-11 text-app-mute dark:text-app-mute-dark mt-0.5">
+                Break duration included in the daily work cap.
+              </p>
             </div>
-            <input
-              type="checkbox"
-              className="size-4 accent-app-ink"
-              checked={!!draft.paidOverride}
-              onChange={(e) => update({ paidOverride: e.target.checked })}
+            <Switch
+              checked={draft.countTowardWorkHours}
+              onCheckedChange={(v) => update({ countTowardWorkHours: v })}
             />
-          </label>
+          </div>
+
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-13 font-medium text-app-ink dark:text-app-ink-dark">
+                Force break after 5 hours
+              </p>
+              <p className="text-11 text-app-mute dark:text-app-mute-dark mt-0.5">
+                KSA Labour Law Art. 101 — mandatory for compliance.
+              </p>
+            </div>
+            <Switch
+              checked={draft.forceBreakAfter5h}
+              onCheckedChange={(v) => update({ forceBreakAfter5h: v })}
+            />
+          </div>
+
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-13 font-medium text-app-ink dark:text-app-ink-dark">
+                Auto-mandate paid during heat ban
+              </p>
+              <p className="text-11 text-app-mute dark:text-app-mute-dark mt-0.5">
+                Outdoor work overlapping 12:00–15:00 triggers a paid mandatory break.
+              </p>
+            </div>
+            <Switch
+              checked={draft.autoMandatePaidDuringHeatBan}
+              onCheckedChange={(v) => update({ autoMandatePaidDuringHeatBan: v })}
+            />
+          </div>
         </div>
 
         <footer className="px-5 py-3 border-t-hair border-app-line dark:border-app-line-dark flex justify-end gap-2">

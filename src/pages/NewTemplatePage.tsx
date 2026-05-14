@@ -62,7 +62,7 @@ const blankDraft = (): Draft => ({
 export const NewTemplatePage = () => {
   const navigate = useNavigate();
   const toast = useToast();
-  const { presets, breakPolicies, createTemplate } = useAppStore();
+  const { presets, createTemplate } = useAppStore();
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<Draft>(blankDraft);
   const [activeWeekDay, setActiveWeekDay] = useState<number | null>(null);
@@ -265,7 +265,7 @@ export const NewTemplatePage = () => {
               <CardSection title="Pick the preset that runs on every selected workday">
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   {presetList.map((p) => {
-                    const sched = deriveSchedule(p, breakPolicies);
+                    const sched = deriveSchedule(p);
                     return (
                       <PresetPickerCard
                         key={p.id}
@@ -297,7 +297,6 @@ export const NewTemplatePage = () => {
             <ComplianceSummaryCard
               weekStart={weekStart}
               slots={summarySlots}
-              breakPolicies={breakPolicies}
             />
           </>
         )}
@@ -353,7 +352,6 @@ export const NewTemplatePage = () => {
             <ComplianceSummaryCard
               weekStart={weekStart}
               slots={summarySlots}
-              breakPolicies={breakPolicies}
             />
           </>
         )}
@@ -431,7 +429,6 @@ export const NewTemplatePage = () => {
             <ComplianceSummaryCard
               weekStart={parseIsoLocal(draft.rotationStartDate)}
               slots={summarySlots}
-              breakPolicies={breakPolicies}
             />
           </>
         )}

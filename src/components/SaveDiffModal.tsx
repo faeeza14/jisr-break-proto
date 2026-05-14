@@ -22,11 +22,30 @@ const baseDiff = (a: ShiftPreset, b: ShiftPreset): FieldDiff[] => {
       before: fmtDuration(a.workDurationMinutes),
       after: fmtDuration(b.workDurationMinutes),
     });
-  if (a.clockWindowPolicyId !== b.clockWindowPolicyId)
+  // R1 — clocking is inline on the preset
+  if (a.clockInWindowStart !== b.clockInWindowStart || a.clockInWindowEnd !== b.clockInWindowEnd)
     out.push({
-      field: 'Clock-in window policy',
-      before: a.clockWindowPolicyId,
-      after: b.clockWindowPolicyId,
+      field: 'Clock-in window',
+      before: `${a.clockInWindowStart}–${a.clockInWindowEnd}`,
+      after: `${b.clockInWindowStart}–${b.clockInWindowEnd}`,
+    });
+  if (a.clockOutWindowStart !== b.clockOutWindowStart || a.clockOutWindowEnd !== b.clockOutWindowEnd)
+    out.push({
+      field: 'Clock-out window',
+      before: `${a.clockOutWindowStart}–${a.clockOutWindowEnd}`,
+      after: `${b.clockOutWindowStart}–${b.clockOutWindowEnd}`,
+    });
+  if (a.clockInGraceMinutes !== b.clockInGraceMinutes)
+    out.push({
+      field: 'Grace minutes',
+      before: String(a.clockInGraceMinutes),
+      after: String(b.clockInGraceMinutes),
+    });
+  if (a.geofenceRequired !== b.geofenceRequired)
+    out.push({
+      field: 'Geofence required',
+      before: a.geofenceRequired ? 'Yes' : 'No',
+      after: b.geofenceRequired ? 'Yes' : 'No',
     });
   if (a.overtimePolicyId !== b.overtimePolicyId)
     out.push({ field: 'Overtime policy', before: a.overtimePolicyId, after: b.overtimePolicyId });

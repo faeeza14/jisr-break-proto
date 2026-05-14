@@ -26,7 +26,7 @@ import {
 import { PresetPickerCard } from '../components/PresetPickerCard';
 import { evaluateCompliance } from '../lib/compliance';
 import { deriveSchedule } from '../lib/segments';
-import type { Assignment, BreakPolicy, Employee, ShiftPreset } from '../types';
+import type { Assignment, Employee, ShiftPreset } from '../types';
 
 const TODAY_ISO = '2026-08-15';
 
@@ -35,13 +35,11 @@ type SelectedCell = { employeeId: string; date: string } | null;
 const hardViolationsOn = (
   preset: ShiftPreset | undefined,
   date: Date,
-  breakPolicies: BreakPolicy[],
   employee?: Employee,
 ) => {
   if (!preset) return [];
   const r = evaluateCompliance({
     preset,
-    breakPolicies,
     context: {
       currentDate: date,
       country: 'SA',
@@ -56,9 +54,8 @@ const hardViolationsOn = (
 const violatesOn = (
   preset: ShiftPreset | undefined,
   date: Date,
-  breakPolicies: BreakPolicy[],
   employee?: Employee,
-): boolean => hardViolationsOn(preset, date, breakPolicies, employee).length > 0;
+): boolean => hardViolationsOn(preset, date, employee).length > 0;
 
 const violationLabel = (ruleId: string): string => {
   if (ruleId === 'ksa.heat_ban') return 'Heat ban';
@@ -73,7 +70,6 @@ export const SchedulerPage = () => {
     employees,
     presets,
     assignments,
-    breakPolicies,
     groups,
     upsertAssignment,
     removeAssignment,
@@ -130,7 +126,7 @@ export const SchedulerPage = () => {
   const violationCount = visibleAssignments.filter((a) => {
     if (!a.presetId) return false;
     const emp = employees.find((e) => e.id === a.employeeId);
-    return violatesOn(presets[a.presetId], parseIsoLocal(a.date), breakPolicies, emp);
+    return violatesOn(presets[a.presetId], parseIsoLocal(a.date), emp);
   }).length;
 
   const isEmpty = visibleAssignments.length === 0;
@@ -171,7 +167,7 @@ export const SchedulerPage = () => {
       const sourcePreset = lookup(source.employeeId, source.date)?.presetId ?? null;
       const targetEmp = employees.find((e) => e.id === target.employeeId);
       const willViolate = sourcePreset
-        ? violatesOn(presets[sourcePreset], parseIsoLocal(target.date), breakPolicies, targetEmp)
+        ? violatesOn(presets[sourcePreset], parseIsoLocal(target.date), targetEmp)
         : false;
       if (willViolate && !window.confirm(`This creates a heat ban violation on ${target.date}. Continue?`)) {
         return;
@@ -306,7 +302,7 @@ export const SchedulerPage = () => {
                   const iso = isoDay(d);
                   const a = lookup(emp.id, iso);
                   const preset = a?.presetId ? presets[a.presetId] : undefined;
-                  const violates = preset ? violatesOn(preset, d, breakPolicies, emp) : false;
+                  const violates = preset ? violatesOn(preset, d, emp) : false;
                   const isSelected =
                     selected?.employeeId === emp.id && selected.date === iso;
                   const weekend = isWeekend(d);
@@ -356,7 +352,6 @@ export const SchedulerPage = () => {
             employee={employees.find((e) => e.id === selected.employeeId)!}
             currentPresetId={lookup(selected.employeeId, selected.date)?.presetId ?? null}
             presets={Object.values(presets)}
-            breakPolicies={breakPolicies}
             onPick={onAssign}
             onClear={onClear}
             onMarkOff={() => onAssign(null)}
@@ -482,7 +477,6 @@ type PanelProps = {
   employee: Employee;
   currentPresetId: string | null;
   presets: ShiftPreset[];
-  breakPolicies: BreakPolicy[];
   onPick: (presetId: string | null) => void;
   onClear: () => void;
   onMarkOff: () => void;
@@ -495,7 +489,6 @@ const AssignmentPanel = ({
   employee,
   currentPresetId,
   presets,
-  breakPolicies,
   onPick,
   onClear,
   onMarkOff,
@@ -534,8 +527,8 @@ const AssignmentPanel = ({
       <CardSection title="Pick a shift preset" className="mt-4">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
           {presets.map((p) => {
-            const sched = deriveSchedule(p, breakPolicies);
-            const hards = hardViolationsOn(p, date, breakPolicies, employee);
+            const sched = deriveSchedule(p);
+            const hards = hardViolationsOn(p, date, employee);
             const warning = hards[0] ? violationLabel(hards[0].ruleId) : undefined;
             return (
               <PresetPickerCard

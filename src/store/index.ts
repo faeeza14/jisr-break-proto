@@ -4,8 +4,6 @@ import type {
   Assignment,
   AuditEntry,
   BreakInstance,
-  BreakPolicy,
-  ClockWindowPolicy,
   Employee,
   ExcusePolicy,
   Group,
@@ -16,8 +14,6 @@ import type {
 } from '../types';
 import {
   assignments as seedAssignments,
-  breakPolicies as seedBreakPolicies,
-  clockWindowPolicies as seedClockWindowPolicies,
   employees as seedEmployees,
   excusePolicies as seedExcusePolicies,
   groups as seedGroups,
@@ -32,8 +28,6 @@ const indexById = <T extends { id: string }>(items: T[]): Record<string, T> =>
 
 type AppState = {
   presets: Record<string, ShiftPreset>;
-  breakPolicies: BreakPolicy[];
-  clockWindowPolicies: ClockWindowPolicy[];
   overtimePolicies: OvertimePolicy[];
   excusePolicies: ExcusePolicy[];
   punchCorrectionPolicies: PunchCorrectionPolicy[];
@@ -50,11 +44,7 @@ type AppState = {
   addBreak: (presetId: string, b: BreakInstance) => void;
   updateBreak: (presetId: string, breakId: string, patch: Partial<BreakInstance>) => void;
   removeBreak: (presetId: string, breakId: string) => void;
-  updateBreakPolicy: (id: string, patch: Partial<BreakPolicy>) => void;
-  updateClockWindowPolicy: (id: string, patch: Partial<ClockWindowPolicy>) => void;
   updateOvertimePolicy: (id: string, patch: Partial<OvertimePolicy>) => void;
-  createBreakPolicy: (full: BreakPolicy) => void;
-  createClockWindowPolicy: (full: ClockWindowPolicy) => void;
   createOvertimePolicy: (full: OvertimePolicy) => void;
   createExcusePolicy: (full: ExcusePolicy) => void;
   createPunchCorrectionPolicy: (full: PunchCorrectionPolicy) => void;
@@ -74,8 +64,6 @@ const tsNow = () => new Date().toISOString();
 
 export const useAppStore = create<AppState>((set, get) => ({
   presets: indexById(seedPresets),
-  breakPolicies: seedBreakPolicies,
-  clockWindowPolicies: seedClockWindowPolicies,
   overtimePolicies: seedOvertimePolicies,
   excusePolicies: seedExcusePolicies,
   punchCorrectionPolicies: seedPunchCorrectionPolicies,
@@ -124,26 +112,11 @@ export const useAppStore = create<AppState>((set, get) => ({
       },
     })),
 
-  updateBreakPolicy: (id, patch) =>
-    set((s) => ({
-      breakPolicies: s.breakPolicies.map((p) => (p.id === id ? { ...p, ...patch } : p)),
-    })),
-
-  updateClockWindowPolicy: (id, patch) =>
-    set((s) => ({
-      clockWindowPolicies: s.clockWindowPolicies.map((p) =>
-        p.id === id ? { ...p, ...patch } : p,
-      ),
-    })),
-
   updateOvertimePolicy: (id, patch) =>
     set((s) => ({
       overtimePolicies: s.overtimePolicies.map((p) => (p.id === id ? { ...p, ...patch } : p)),
     })),
 
-  createBreakPolicy: (full) => set((s) => ({ breakPolicies: [...s.breakPolicies, full] })),
-  createClockWindowPolicy: (full) =>
-    set((s) => ({ clockWindowPolicies: [...s.clockWindowPolicies, full] })),
   createOvertimePolicy: (full) =>
     set((s) => ({ overtimePolicies: [...s.overtimePolicies, full] })),
   createExcusePolicy: (full) => set((s) => ({ excusePolicies: [...s.excusePolicies, full] })),

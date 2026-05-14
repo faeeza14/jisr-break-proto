@@ -1,6 +1,6 @@
 import { CheckCircle2, ShieldAlert } from 'lucide-react';
 import { evaluateCompliance } from '../lib/compliance';
-import type { BreakPolicy, ShiftPreset } from '../types';
+import type { ShiftPreset } from '../types';
 import { Card, CardSectionLabel } from './primitives/Card';
 import { DAY_NAMES_FULL, fmtMonShort } from '../lib/weekly';
 
@@ -9,11 +9,11 @@ type Slot = { date: Date; preset: ShiftPreset | null };
 export const ComplianceSummaryCard = ({
   weekStart,
   slots,
-  breakPolicies,
 }: {
   weekStart: Date;
   slots: Slot[];
-  breakPolicies: BreakPolicy[];
+  /** Kept for API compatibility with the vision proto; ignored in R1 */
+  breakPolicies?: unknown;
 }) => {
   const filled = slots.filter((s) => !!s.preset);
   if (filled.length === 0) return null;
@@ -23,7 +23,6 @@ export const ComplianceSummaryCard = ({
     if (!s.preset) continue;
     const r = evaluateCompliance({
       preset: s.preset,
-      breakPolicies,
       context: { currentDate: s.date, country: 'SA' },
     });
     for (const v of r.violations) {

@@ -19,11 +19,13 @@ export const heatBanFix = (p: ShiftPreset): ShiftPreset => {
       {
         id: `bk-fix-${nanoid(6)}`,
         name: 'Heat ban mandated paid break',
-        breakPolicyId: p.breaks[0]?.breakPolicyId ?? 'bp1',
         scheduleType: 'fixed',
         fixedTime: '12:00',
         durationMinutes: HEAT_BAN_DURATION,
-        paidOverride: true,
+        paid: 'paid',
+        countTowardWorkHours: true,
+        autoMandatePaidDuringHeatBan: true,
+        forceBreakAfter5h: false,
       },
     ],
   };
@@ -39,10 +41,13 @@ export const ensureBreakAfter5hFix = (p: ShiftPreset): ShiftPreset => {
       {
         id: `bk-fix-${nanoid(6)}`,
         name: 'Mandatory rest',
-        breakPolicyId: p.breaks[0]?.breakPolicyId ?? 'bp1',
         scheduleType: 'fixed',
         fixedTime: fmtHHMM(splitAt),
         durationMinutes: 30,
+        paid: 'unpaid',
+        countTowardWorkHours: false,
+        autoMandatePaidDuringHeatBan: false,
+        forceBreakAfter5h: true,
       },
     ],
   };

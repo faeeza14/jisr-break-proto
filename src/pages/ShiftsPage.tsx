@@ -76,7 +76,7 @@ export const ShiftsPage = () => {
 type SortDir = 'asc' | 'desc';
 
 const PresetsList = () => {
-  const { presets, breakPolicies, clockWindowPolicies, overtimePolicies, ui } = useAppStore();
+  const { presets, overtimePolicies, ui } = useAppStore();
   const navigate = useNavigate();
   const [q, setQ] = useState('');
   const [showName, setShowName] = useState(true);
@@ -108,7 +108,6 @@ const PresetsList = () => {
     return [...filtered].sort(cmp);
   }, [filtered, sortKey, sortDir]);
 
-  const cwName = (id: string) => clockWindowPolicies.find((c) => c.id === id)?.name ?? '—';
   const otName = (id: string) => overtimePolicies.find((c) => c.id === id)?.name ?? '—';
 
   const date = new Date(ui.currentDate);
@@ -129,7 +128,7 @@ const PresetsList = () => {
       sortable: true,
       render: (p) => {
         const startMin = parseHHMM(p.startTime);
-        const sched = deriveSchedule(p, breakPolicies);
+        const sched = deriveSchedule(p);
         return (
           <div className="min-w-0">
             <div className="font-medium truncate text-app-ink dark:text-app-ink-dark">
@@ -159,10 +158,10 @@ const PresetsList = () => {
       render: (p) => (
         <span className="min-w-0">
           <span className="hidden min-[900px]:inline">
-            <BreakIndicator breaks={p.breaks} breakPolicies={breakPolicies} />
+            <BreakIndicator breaks={p.breaks} />
           </span>
           <span className="inline min-[900px]:hidden">
-            <BreakIndicator breaks={p.breaks} breakPolicies={breakPolicies} compact />
+            <BreakIndicator breaks={p.breaks} compact />
           </span>
         </span>
       ),
@@ -173,7 +172,7 @@ const PresetsList = () => {
       width: 'minmax(160px,1.1fr)',
       render: (p) => (
         <Tag appearance="neutral" size="sm">
-          {cwName(p.clockWindowPolicyId)}
+          {p.clockInWindowStart}–{p.clockInWindowEnd}
         </Tag>
       ),
     },
@@ -194,7 +193,6 @@ const PresetsList = () => {
       render: (p) => {
         const result = evaluateCompliance({
           preset: p,
-          breakPolicies,
           context: { currentDate: date, country: 'SA' },
         });
         if (result.status === 'red') return <Tag appearance="danger" size="sm">Violations</Tag>;
@@ -265,7 +263,7 @@ const presetIdsInTemplate = (t: ShiftTemplate): string[] => {
 };
 
 const TemplatesList = () => {
-  const { templates, presets, clockWindowPolicies, breakPolicies, ui } = useAppStore();
+  const { templates, presets, ui } = useAppStore();
   const navigate = useNavigate();
   const date = new Date(ui.currentDate);
 
@@ -290,7 +288,6 @@ const TemplatesList = () => {
           const someViolation = uniquePresets.some((p) => {
             const r = evaluateCompliance({
               preset: p,
-              breakPolicies,
               context: { currentDate: date, country: 'SA' },
             });
             return r.status === 'red';
@@ -307,7 +304,6 @@ const TemplatesList = () => {
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {uniquePresets.map((p) => {
-                      const cw = clockWindowPolicies.find((c) => c.id === p.clockWindowPolicyId);
                       return (
                         <Tag
                           key={p.id}
@@ -317,7 +313,7 @@ const TemplatesList = () => {
                             <span className="inline-block size-2 rounded-full" style={{ backgroundColor: p.color }} />
                           }
                         >
-                          {p.nameEn} · {p.startTime}–{cw?.clockOutWindowEnd ?? '—'}
+                          {p.nameEn} · {p.startTime}–{p.clockOutWindowEnd}
                         </Tag>
                       );
                     })}

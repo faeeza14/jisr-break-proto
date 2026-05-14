@@ -5,7 +5,6 @@ import { ShiftsPage } from './pages/ShiftsPage';
 import { ShiftsLayout } from './pages/ShiftsLayout';
 import { PresetDetail } from './pages/PresetDetail';
 import { PoliciesPage } from './pages/PoliciesPage';
-import { BreakPolicyDetail } from './pages/BreakPolicyDetail';
 import { Placeholder } from './pages/Placeholder';
 import { SchedulerPage } from './pages/SchedulerPage';
 import { NewPolicyPage } from './pages/NewPolicyPage';
@@ -31,23 +30,7 @@ const App = () => (
         <Route path="/settings/attendance/shifts/templates/new" element={<NewTemplatePage />} />
         <Route path="/settings/attendance/policies" element={<PoliciesPage />} />
         <Route path="/settings/attendance/policies/new" element={<NewPolicyPage />} />
-        <Route
-          path="/settings/attendance/policies/break/:id"
-          element={<BreakPolicyDetail />}
-        />
-        <Route
-          path="/settings/attendance/policies/break/new"
-          element={<BreakPolicyDetail />}
-        />
-        <Route
-          path="/settings/attendance/policies/clock_window/:id"
-          element={
-            <Placeholder
-              title="Clock-in window policy"
-              subtitle="Detail editor placeholder for prototype scope"
-            />
-          }
-        />
+        {/* R1 — Break and Clock-in window are no longer reusable policies; configured per shift instead */}
         <Route
           path="/settings/attendance/policies/overtime/:id"
           element={

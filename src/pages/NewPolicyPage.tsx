@@ -1,6 +1,6 @@
 /**
- * New Policy page — rebuilt with @jisr-hr/ds-web components.
- * Break type is prominently featured (hero flow).
+ * R1 New Policy page — Break and Clock-in window are NOT policies in R1
+ * (configured per shift). Only Overtime / Excuse / Punch correction remain.
  */
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -16,43 +16,20 @@ import {
   Textarea,
   Switch,
   NumberInput,
-  SegmentedControl,
   Tag,
-  Banner,
-  Separator,
   useToast,
 } from '@jisr-hr/ds-web';
 import { useAppStore } from '../store';
-import type {
-  BreakPolicy,
-  BreakScheduleType,
-  ClockWindowPolicy,
-  ExcusePolicy,
-  OvertimePolicy,
-  PunchCorrectionPolicy,
-} from '../types';
+import type { ExcusePolicy, OvertimePolicy, PunchCorrectionPolicy } from '../types';
 
-type PolicyKind = 'overtime' | 'break' | 'clock_window' | 'excuse' | 'punch_correction';
+type PolicyKind = 'overtime' | 'excuse' | 'punch_correction';
 
 const POLICY_TYPES: Array<{
   id: PolicyKind;
   label: string;
   description: string;
-  isNew?: boolean;
 }> = [
   { id: 'overtime', label: 'Overtime', description: 'Rate multipliers and approval rules' },
-  {
-    id: 'break',
-    label: 'Break',
-    description: 'Paid/unpaid, schedule type, KSA compliance',
-    isNew: true,
-  },
-  {
-    id: 'clock_window',
-    label: 'Clock-in window',
-    description: 'Grace periods and geofence settings',
-    isNew: true,
-  },
   { id: 'excuse', label: 'Excuse', description: 'Approval and monthly limits' },
   { id: 'punch_correction', label: 'Punch correction', description: 'Approval and audit rules' },
 ];
@@ -70,8 +47,6 @@ export const NewPolicyPage = () => {
 
   const {
     groups,
-    createBreakPolicy,
-    createClockWindowPolicy,
     createOvertimePolicy,
     createExcusePolicy,
     createPunchCorrectionPolicy,
@@ -85,30 +60,6 @@ export const NewPolicyPage = () => {
     timeOffInLieuRate: 0.25,
     preApprovalRequired: false,
     autoOvertimeAfterMinutes: 60 as number | null,
-  });
-  const [breakP, setBreakP] = useState<{
-    paid: BreakPolicy['paid'];
-    defaultScheduleType: BreakPolicy['defaultScheduleType'];
-    countTowardWorkHours: boolean;
-    autoMandatePaidDuringHeatBan: boolean;
-    forceBreakAfter5h: boolean;
-  }>({
-    paid: 'unpaid',
-    defaultScheduleType: 'flexible',
-    countTowardWorkHours: false,
-    autoMandatePaidDuringHeatBan: false,
-    forceBreakAfter5h: true,
-  });
-  const [cw, setCw] = useState({
-    clockInWindowStart: '08:00',
-    clockInWindowEnd: '10:00',
-    clockOutWindowStart: '17:00',
-    clockOutWindowEnd: '19:00',
-    clockInGraceMinutes: 15,
-    allowedShortageMinutes: 60,
-    geofenceRequired: false,
-    geofenceRadiusMeters: 100,
-    ipRestricted: false,
   });
   const [excuse, setExcuse] = useState({ approvalRequired: true, maxPerMonth: 3 });
   const [punch, setPunch] = useState({ approvalRequired: true, maxPerMonth: 5 });
@@ -146,12 +97,6 @@ export const NewPolicyPage = () => {
     switch (kind) {
       case 'overtime':
         createOvertimePolicy({ ...base, type: 'overtime', ...overtime } as OvertimePolicy);
-        break;
-      case 'break':
-        createBreakPolicy({ ...base, type: 'break', ...breakP } as BreakPolicy);
-        break;
-      case 'clock_window':
-        createClockWindowPolicy({ ...base, type: 'clock_window', ...cw } as ClockWindowPolicy);
         break;
       case 'excuse':
         createExcusePolicy({ ...base, type: 'excuse', ...excuse } as ExcusePolicy);
@@ -215,7 +160,6 @@ export const NewPolicyPage = () => {
                     <span className="text-13 font-medium text-app-ink dark:text-app-ink-dark">
                       {pt.label}
                     </span>
-                    {pt.isNew && <Tag appearance="info" size="sm">New</Tag>}
                   </span>
                   <span className="text-11 text-app-mute dark:text-app-mute-dark">
                     {pt.description}
@@ -248,111 +192,6 @@ export const NewPolicyPage = () => {
             </div>
           </CardSection>
         </Card>
-
-        {/* ── Break-specific config ── */}
-        {kind === 'break' && (
-          <>
-            <Card>
-              <CardSection title="Break type & behaviour">
-                <div className="space-y-4">
-                  <Field label="Paid" description="Whether break time is included in payroll.">
-                    <SegmentedControl
-                      value={breakP.paid}
-                      onChange={(v) => setBreakP((b) => ({ ...b, paid: v as BreakPolicy['paid'] }))}
-                      options={[
-                        { value: 'paid', label: 'Paid', description: 'Included in payroll' },
-                        { value: 'unpaid', label: 'Unpaid', description: 'Deducted from wages' },
-                        { value: 'mixed', label: 'Mixed', description: 'Per-instance setting' },
-                      ]}
-                    />
-                  </Field>
-
-                  <Separator />
-
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-13 font-medium text-app-ink dark:text-app-ink-dark">
-                        Counts toward work hours
-                      </p>
-                      <p className="text-11 text-app-mute dark:text-app-mute-dark mt-0.5">
-                        Break duration included in the daily work cap.
-                      </p>
-                    </div>
-                    <Switch
-                      checked={breakP.countTowardWorkHours}
-                      onCheckedChange={(v) => setBreakP((b) => ({ ...b, countTowardWorkHours: v }))}
-                    />
-                  </div>
-                </div>
-              </CardSection>
-            </Card>
-
-            <Card>
-              <CardSection title="Schedule">
-                <Field
-                  label="Schedule type"
-                  description="Default shape applied when this policy is added to a shift preset."
-                >
-                  <SegmentedControl
-                    value={breakP.defaultScheduleType}
-                    onChange={(v) =>
-                      setBreakP((b) => ({ ...b, defaultScheduleType: v as BreakScheduleType }))
-                    }
-                    options={[
-                      { value: 'fixed', label: 'Fixed', description: 'Exact start time' },
-                      { value: 'flexible', label: 'Flexible', description: 'Within a window' },
-                      { value: 'mixed', label: 'Mixed', description: 'Employee chooses' },
-                    ]}
-                  />
-                </Field>
-              </CardSection>
-            </Card>
-
-            <Card>
-              <CardSection title="KSA compliance behaviour">
-                <div className="space-y-3">
-                  <Banner appearance="info" emphasis="low">
-                    These settings control how this policy interacts with KSA Labour Law requirements.
-                  </Banner>
-                  <div className="flex items-start justify-between gap-4 pt-1">
-                    <div>
-                      <span className="flex items-center gap-1.5">
-                        <p className="text-13 font-medium text-app-ink dark:text-app-ink-dark">
-                          Force break after 5 hours of work
-                        </p>
-                        <Tag appearance="danger" size="sm">Required</Tag>
-                      </span>
-                      <p className="text-11 text-app-mute dark:text-app-mute-dark mt-0.5">
-                        KSA Labour Law Art. 101 — mandatory for compliance.
-                      </p>
-                    </div>
-                    <Switch
-                      checked={breakP.forceBreakAfter5h}
-                      onCheckedChange={(v) => setBreakP((b) => ({ ...b, forceBreakAfter5h: v }))}
-                    />
-                  </div>
-                  <Separator />
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-13 font-medium text-app-ink dark:text-app-ink-dark">
-                        Auto-mandate paid break during heat ban
-                      </p>
-                      <p className="text-11 text-app-mute dark:text-app-mute-dark mt-0.5">
-                        Outdoor work overlapping 12:00–15:00 triggers paid mandatory break.
-                      </p>
-                    </div>
-                    <Switch
-                      checked={breakP.autoMandatePaidDuringHeatBan}
-                      onCheckedChange={(v) =>
-                        setBreakP((b) => ({ ...b, autoMandatePaidDuringHeatBan: v }))
-                      }
-                    />
-                  </div>
-                </div>
-              </CardSection>
-            </Card>
-          </>
-        )}
 
         {/* ── Overtime-specific config ── */}
         {kind === 'overtime' && (
@@ -400,70 +239,6 @@ export const NewPolicyPage = () => {
                   <Switch
                     checked={overtime.preApprovalRequired}
                     onCheckedChange={(v) => setOvertime((o) => ({ ...o, preApprovalRequired: v }))}
-                  />
-                </div>
-              </div>
-            </CardSection>
-          </Card>
-        )}
-
-        {/* ── Clock-window-specific config ── */}
-        {kind === 'clock_window' && (
-          <Card>
-            <CardSection title="Clock-in/out windows">
-              <div className="space-y-4">
-                <div className="grid sm:grid-cols-2 gap-3">
-                  <Field label="Clock-in window start">
-                    <Input
-                      type="time"
-                      value={cw.clockInWindowStart}
-                      onChange={(e) => setCw((c) => ({ ...c, clockInWindowStart: e.target.value }))}
-                    />
-                  </Field>
-                  <Field label="Clock-in window end">
-                    <Input
-                      type="time"
-                      value={cw.clockInWindowEnd}
-                      onChange={(e) => setCw((c) => ({ ...c, clockInWindowEnd: e.target.value }))}
-                    />
-                  </Field>
-                  <Field label="Clock-out window start">
-                    <Input
-                      type="time"
-                      value={cw.clockOutWindowStart}
-                      onChange={(e) => setCw((c) => ({ ...c, clockOutWindowStart: e.target.value }))}
-                    />
-                  </Field>
-                  <Field label="Clock-out window end">
-                    <Input
-                      type="time"
-                      value={cw.clockOutWindowEnd}
-                      onChange={(e) => setCw((c) => ({ ...c, clockOutWindowEnd: e.target.value }))}
-                    />
-                  </Field>
-                </div>
-                <Field label="Grace period (minutes)">
-                  <NumberInput
-                    value={cw.clockInGraceMinutes}
-                    onChange={(v) => setCw((c) => ({ ...c, clockInGraceMinutes: v }))}
-                    min={0}
-                    max={60}
-                    step={5}
-                    endAddon="min"
-                  />
-                </Field>
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-13 font-medium text-app-ink dark:text-app-ink-dark">
-                      Geofence required
-                    </p>
-                    <p className="text-11 text-app-mute dark:text-app-mute-dark mt-0.5">
-                      Employee must be on-site (GPS) to clock in.
-                    </p>
-                  </div>
-                  <Switch
-                    checked={cw.geofenceRequired}
-                    onCheckedChange={(v) => setCw((c) => ({ ...c, geofenceRequired: v }))}
                   />
                 </div>
               </div>

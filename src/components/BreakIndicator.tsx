@@ -1,4 +1,4 @@
-import type { BreakInstance, BreakPolicy, BreakScheduleType } from '../types';
+import type { BreakInstance, BreakScheduleType } from '../types';
 import { fmtDuration } from '../lib/time';
 
 const dotClass = (t: BreakScheduleType) =>
@@ -21,7 +21,8 @@ const HollowGray = () => (
 
 type Props = {
   breaks: BreakInstance[];
-  breakPolicies: BreakPolicy[];
+  /** Kept for API compatibility with the vision proto; ignored in R1 */
+  breakPolicies?: unknown;
   compact?: boolean;
 };
 
@@ -31,20 +32,18 @@ const orderedTypes = (breaks: BreakInstance[]): BreakScheduleType[] => {
   return order.filter((t) => present.has(t)).slice(0, 3);
 };
 
-const tooltipFor = (breaks: BreakInstance[], breakPolicies: BreakPolicy[]): string => {
+const paidLabel = (p: BreakInstance['paid']): string =>
+  p === 'paid' ? 'Paid' : p === 'unpaid' ? 'Unpaid' : 'Mixed';
+
+const tooltipFor = (breaks: BreakInstance[]): string => {
   if (breaks.length === 0) return 'No breaks configured';
-  const policyMap = Object.fromEntries(breakPolicies.map((p) => [p.id, p]));
   return breaks
-    .map((b) => {
-      const policy = policyMap[b.breakPolicyId]?.name ?? '—';
-      return `${b.name} · ${fmtDuration(b.durationMinutes)} · ${policy}`;
-    })
+    .map((b) => `${b.name} · ${fmtDuration(b.durationMinutes)} · ${paidLabel(b.paid)}`)
     .join('\n');
 };
 
-export const BreakIndicator = ({ breaks, breakPolicies, compact = false }: Props) => {
-  const policyMap = Object.fromEntries(breakPolicies.map((p) => [p.id, p]));
-  const tooltip = tooltipFor(breaks, breakPolicies);
+export const BreakIndicator = ({ breaks, compact = false }: Props) => {
+  const tooltip = tooltipFor(breaks);
 
   if (breaks.length === 0) {
     if (compact) {
@@ -63,7 +62,6 @@ export const BreakIndicator = ({ breaks, breakPolicies, compact = false }: Props
 
   if (breaks.length === 1) {
     const b = breaks[0];
-    const policy = policyMap[b.breakPolicyId];
     if (compact) {
       return (
         <span title={tooltip} className="inline-flex">
@@ -79,7 +77,7 @@ export const BreakIndicator = ({ breaks, breakPolicies, compact = false }: Props
             {b.name} · {fmtDuration(b.durationMinutes)}
           </span>
           <span className="block text-11 text-app-mute dark:text-app-mute-dark truncate">
-            {policy?.name ?? '—'}
+            {paidLabel(b.paid)}
           </span>
         </span>
       </span>
@@ -88,11 +86,11 @@ export const BreakIndicator = ({ breaks, breakPolicies, compact = false }: Props
 
   const types = orderedTypes(breaks);
   const totalMin = breaks.reduce((acc, b) => acc + b.durationMinutes, 0);
-  const policyIds = new Set(breaks.map((b) => b.breakPolicyId));
-  const policyLine =
-    policyIds.size === 1
-      ? policyMap[breaks[0].breakPolicyId]?.name ?? '—'
-      : 'Mixed policies';
+  const paidKinds = new Set(breaks.map((b) => b.paid));
+  const summary =
+    paidKinds.size === 1
+      ? paidLabel(breaks[0].paid)
+      : 'Mixed paid / unpaid';
 
   if (compact) {
     return (
@@ -116,7 +114,7 @@ export const BreakIndicator = ({ breaks, breakPolicies, compact = false }: Props
           {breaks.length} breaks · {fmtDuration(totalMin)}
         </span>
         <span className="block text-11 text-app-mute dark:text-app-mute-dark truncate">
-          {policyLine}
+          {summary}
         </span>
       </span>
     </span>

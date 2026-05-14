@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, r1]
   workflow_dispatch:
 
 permissions:
@@ -14,21 +14,58 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
+# Combined deploy: every push to main or r1 rebuilds BOTH branches and
+# publishes them together so designers can review both side by side:
+#   main → https://faeeza14.github.io/jisr-break-proto/        (product vision)
+#   r1   → https://faeeza14.github.io/jisr-break-proto/r1/     (release 1)
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+
+      # --- main (vision) build → dist/ ---
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-      - uses: actions/configure-pages@v5
-      - run: npm install --no-audit --no-fund --ignore-scripts
-      - run: npm run build
+          cache-dependency-path: main/package-lock.json
+      - name: Install (main)
+        working-directory: main
+        run: npm install --no-audit --no-fund --ignore-scripts
+      - name: Build (main)
+        working-directory: main
+        env:
+          VITE_BASE_PATH: /jisr-break-proto/
+        run: npm run build
+
+      # --- r1 build → main/dist/r1/ (combined into one artifact) ---
+      - name: Checkout r1
+        uses: actions/checkout@v4
+        with:
+          ref: r1
+          path: r1
+      - name: Install (r1)
+        working-directory: r1
+        run: npm install --no-audit --no-fund --ignore-scripts
+      - name: Build (r1)
+        working-directory: r1
+        env:
+          VITE_BASE_PATH: /jisr-break-proto/r1/
+        run: npm run build
+      - name: Merge r1 dist under /r1
+        run: |
+          mkdir -p main/dist/r1
+          cp -r r1/dist/. main/dist/r1/
+
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: main/dist
 
   deploy:
     needs: build

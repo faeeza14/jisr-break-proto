@@ -11,6 +11,8 @@ import {
   Button,
   Field,
   Input,
+  NumberInput,
+  Switch,
   Tag,
   Banner,
   CalendarPopover,
@@ -46,8 +48,23 @@ const buildAuditDiff = (a: ShiftPreset, b: ShiftPreset) => {
     diff.push({ field: 'startTime', before: a.startTime, after: b.startTime });
   if (a.workDurationMinutes !== b.workDurationMinutes)
     diff.push({ field: 'workDurationMinutes', before: a.workDurationMinutes, after: b.workDurationMinutes });
-  if (a.clockWindowPolicyId !== b.clockWindowPolicyId)
-    diff.push({ field: 'clockWindowPolicyId', before: a.clockWindowPolicyId, after: b.clockWindowPolicyId });
+  // R1 — clocking fields are inline on the preset
+  if (a.clockInWindowStart !== b.clockInWindowStart || a.clockInWindowEnd !== b.clockInWindowEnd)
+    diff.push({
+      field: 'clockInWindow',
+      before: `${a.clockInWindowStart}–${a.clockInWindowEnd}`,
+      after: `${b.clockInWindowStart}–${b.clockInWindowEnd}`,
+    });
+  if (a.clockOutWindowStart !== b.clockOutWindowStart || a.clockOutWindowEnd !== b.clockOutWindowEnd)
+    diff.push({
+      field: 'clockOutWindow',
+      before: `${a.clockOutWindowStart}–${a.clockOutWindowEnd}`,
+      after: `${b.clockOutWindowStart}–${b.clockOutWindowEnd}`,
+    });
+  if (a.clockInGraceMinutes !== b.clockInGraceMinutes)
+    diff.push({ field: 'graceMinutes', before: a.clockInGraceMinutes, after: b.clockInGraceMinutes });
+  if (a.geofenceRequired !== b.geofenceRequired)
+    diff.push({ field: 'geofenceRequired', before: a.geofenceRequired, after: b.geofenceRequired });
   if (a.overtimePolicyId !== b.overtimePolicyId)
     diff.push({ field: 'overtimePolicyId', before: a.overtimePolicyId, after: b.overtimePolicyId });
   const aBreaks = a.breaks.map((x) => x.id).sort().join(',');
@@ -65,7 +82,15 @@ const buildEmptyPreset = (): ShiftPreset => ({
   startTime: '09:00',
   workDurationMinutes: 480,
   breaks: [],
-  clockWindowPolicyId: 'cw2',
+  // R1 — clocking inline defaults (office-style)
+  clockInWindowStart: '08:00',
+  clockInWindowEnd: '10:00',
+  clockOutWindowStart: '17:00',
+  clockOutWindowEnd: '19:00',
+  clockInGraceMinutes: 15,
+  allowedShortageMinutes: 60,
+  geofenceRequired: false,
+  ipRestricted: false,
   overtimePolicyId: 'ot2',
   usedInTemplateIds: [],
 });
@@ -78,8 +103,6 @@ export const PresetDetail = () => {
   const isNewRoute = location.pathname.endsWith('/presets/new');
   const {
     presets,
-    breakPolicies,
-    clockWindowPolicies,
     overtimePolicies,
     templates,
     assignments,
@@ -132,18 +155,15 @@ export const PresetDetail = () => {
   }
 
   const date = new Date(ui.currentDate);
-  const sched = deriveSchedule(preset, breakPolicies);
+  const sched = deriveSchedule(preset);
   const compliance = evaluateCompliance({
     preset,
-    breakPolicies,
     context: { currentDate: date, country: 'SA' },
   });
   const isDirty =
     snapshotRef.current && JSON.stringify(snapshotRef.current) !== JSON.stringify(preset);
 
-  const cwPolicy = clockWindowPolicies.find((c) => c.id === preset.clockWindowPolicyId);
   const otPolicy = overtimePolicies.find((c) => c.id === preset.overtimePolicyId);
-  const policyMap = Object.fromEntries(breakPolicies.map((b) => [b.id, b]));
 
   const heatBanActive = isHeatBanDate(date) && preset.workEnvironment !== 'indoor';
   const showViolations = !overridden && compliance.violations.some((v) => v.ruleId === 'ksa.heat_ban');
@@ -164,7 +184,6 @@ export const PresetDetail = () => {
   const baselineHard = snapshotRef.current
     ? evaluateCompliance({
         preset: snapshotRef.current,
-        breakPolicies,
         context: { currentDate: date, country: 'SA' },
       }).violations.filter((v) => v.severity === 'hard').length
     : 0;
@@ -429,7 +448,6 @@ export const PresetDetail = () => {
                 </li>
               )}
               {preset.breaks.map((b) => {
-                const policy = policyMap[b.breakPolicyId];
                 const dot =
                   b.scheduleType === 'fixed'
                     ? 'bg-app-ink dark:bg-app-ink-dark'
@@ -451,7 +469,7 @@ export const PresetDetail = () => {
                     <div className="flex-1 min-w-0">
                       <div className="text-13 font-medium truncate text-app-ink dark:text-app-ink-dark">{b.name}</div>
                       <div className="text-11 text-app-mute dark:text-app-mute-dark">
-                        {policy?.name ?? '—'} · {b.paidOverride ? 'paid' : (policy?.paid ?? 'unpaid')} · {schedLabel}
+                        {b.paid === 'paid' ? 'Paid' : b.paid === 'unpaid' ? 'Unpaid' : 'Mixed'} · {schedLabel}
                       </div>
                     </div>
                     <Tag appearance="neutral" size="sm">{fmtDuration(b.durationMinutes)}</Tag>
@@ -475,6 +493,115 @@ export const PresetDetail = () => {
             </p>
           </Card>
 
+          {/* R1 — Clocking rules live inline on the preset, not as a separate policy */}
+          <Card>
+            <CardSection title="Clocking rules">
+              <p className="text-11 text-app-mute dark:text-app-mute-dark mb-3">
+                Configured per shift in R1 — these settings don't apply to other shifts.
+              </p>
+              <div className="space-y-4">
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <Field label="Clock-in window start">
+                    <Input
+                      type="time"
+                      value={preset.clockInWindowStart}
+                      onChange={(e) =>
+                        updatePreset(preset.id, { clockInWindowStart: e.target.value })
+                      }
+                    />
+                  </Field>
+                  <Field label="Clock-in window end">
+                    <Input
+                      type="time"
+                      value={preset.clockInWindowEnd}
+                      onChange={(e) => updatePreset(preset.id, { clockInWindowEnd: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Clock-out window start">
+                    <Input
+                      type="time"
+                      value={preset.clockOutWindowStart}
+                      onChange={(e) =>
+                        updatePreset(preset.id, { clockOutWindowStart: e.target.value })
+                      }
+                    />
+                  </Field>
+                  <Field label="Clock-out window end">
+                    <Input
+                      type="time"
+                      value={preset.clockOutWindowEnd}
+                      onChange={(e) =>
+                        updatePreset(preset.id, { clockOutWindowEnd: e.target.value })
+                      }
+                    />
+                  </Field>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <Field label="Grace period (minutes)">
+                    <NumberInput
+                      value={preset.clockInGraceMinutes}
+                      onChange={(v) => updatePreset(preset.id, { clockInGraceMinutes: v })}
+                      min={0}
+                      max={60}
+                      step={5}
+                      endAddon="min"
+                    />
+                  </Field>
+                  <Field label="Allowed shortage (minutes)">
+                    <NumberInput
+                      value={preset.allowedShortageMinutes}
+                      onChange={(v) => updatePreset(preset.id, { allowedShortageMinutes: v })}
+                      min={0}
+                      max={240}
+                      step={5}
+                      endAddon="min"
+                    />
+                  </Field>
+                </div>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-13 font-medium text-app-ink dark:text-app-ink-dark">
+                      Geofence required
+                    </p>
+                    <p className="text-11 text-app-mute dark:text-app-mute-dark mt-0.5">
+                      Employee must be on-site (GPS) to clock in.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={preset.geofenceRequired}
+                    onCheckedChange={(v) => updatePreset(preset.id, { geofenceRequired: v })}
+                  />
+                </div>
+                {preset.geofenceRequired && (
+                  <Field label="Geofence radius (metres)">
+                    <NumberInput
+                      value={preset.geofenceRadiusMeters ?? 100}
+                      onChange={(v) => updatePreset(preset.id, { geofenceRadiusMeters: v })}
+                      min={25}
+                      max={500}
+                      step={25}
+                      endAddon="m"
+                    />
+                  </Field>
+                )}
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-13 font-medium text-app-ink dark:text-app-ink-dark">
+                      Restrict to office IPs
+                    </p>
+                    <p className="text-11 text-app-mute dark:text-app-mute-dark mt-0.5">
+                      Only allow clock-in from approved network ranges.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={preset.ipRestricted}
+                    onCheckedChange={(v) => updatePreset(preset.id, { ipRestricted: v })}
+                  />
+                </div>
+              </div>
+            </CardSection>
+          </Card>
+
           <Card>
             <div className="flex items-baseline justify-between gap-2 mb-3">
               <p className="text-11 tracking-[0.08em] uppercase text-app-faint dark:text-app-faint-dark font-medium">
@@ -491,18 +618,6 @@ export const PresetDetail = () => {
               </span>
             </div>
             <div className="divide-y divide-app-line dark:divide-app-line-dark">
-              <PolicyRow
-                title="Clock-in / clock-out window"
-                meta={
-                  cwPolicy
-                    ? `${cwPolicy.clockInGraceMinutes}m grace · ${cwPolicy.clockInWindowStart}–${cwPolicy.clockInWindowEnd} in / ${cwPolicy.clockOutWindowStart}–${cwPolicy.clockOutWindowEnd} out${cwPolicy.geofenceRequired ? ` · ${cwPolicy.geofenceRadiusMeters}m geofence` : ''}`
-                    : '—'
-                }
-                value={preset.clockWindowPolicyId}
-                options={clockWindowPolicies.map((c) => ({ id: c.id, label: c.name }))}
-                onChange={(v) => updatePreset(preset.id, { clockWindowPolicyId: v })}
-                configureTo={`/settings/attendance/policies/clock_window/${preset.clockWindowPolicyId}`}
-              />
               <PolicyRow
                 title="Overtime"
                 meta={
@@ -583,7 +698,6 @@ export const PresetDetail = () => {
         open={breakSheet.open}
         onClose={() => setBreakSheet({ open: false, editing: null })}
         initial={breakSheet.editing}
-        breakPolicies={breakPolicies}
         onSave={onSaveBreak}
       />
       <OverrideModal
@@ -734,8 +848,7 @@ const SuggestedFix = ({
   onApply: () => void;
   onOverride: () => void;
 }) => {
-  const { breakPolicies } = useAppStore();
-  const sched = deriveSchedule(fix, breakPolicies);
+  const sched = deriveSchedule(fix);
   return (
     <div className="mt-3 rounded-md bg-white dark:bg-app-card-dark hairline p-3">
       <p className="text-11 tracking-[0.08em] uppercase text-app-faint dark:text-app-faint-dark font-medium mb-2">

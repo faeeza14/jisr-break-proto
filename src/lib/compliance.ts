@@ -1,27 +1,24 @@
-import type {
-  BreakPolicy,
-  ComplianceContext,
-  ComplianceResult,
-  ShiftPreset,
-  Violation,
-} from '../types';
+import type { ComplianceContext, ComplianceResult, ShiftPreset, Violation } from '../types';
 import { fmtHHMM, heatBanSpan, intersect, isHeatBanDate } from './time';
 import { isRamadanDate } from '../data/ramadan';
 import { deriveSchedule } from './segments';
 import { ensureBreakAfter5hFix, heatBanFix } from './fixers';
 
+// R1 — break behaviour is read off BreakInstance directly, so the `breakPolicies`
+// argument is no longer required. Kept as optional in the type for now so existing
+// call sites don't need updating in lock-step.
 export type ComplianceArgs = {
   preset: ShiftPreset;
-  breakPolicies: BreakPolicy[];
+  breakPolicies?: unknown;
   context: ComplianceContext;
 };
 
 type Rule = (args: ComplianceArgs) => Violation[];
 
-const heatBanRule: Rule = ({ preset, breakPolicies, context }) => {
+const heatBanRule: Rule = ({ preset, context }) => {
   if (preset.workEnvironment === 'indoor') return [];
   if (!isHeatBanDate(context.currentDate)) return [];
-  const sched = deriveSchedule(preset, breakPolicies);
+  const sched = deriveSchedule(preset);
   const violations: Violation[] = [];
   for (const seg of sched.segments) {
     if (seg.kind !== 'work') continue;
@@ -39,8 +36,8 @@ const heatBanRule: Rule = ({ preset, breakPolicies, context }) => {
   return violations;
 };
 
-const mandatoryBreak5hRule: Rule = ({ preset, breakPolicies }) => {
-  const sched = deriveSchedule(preset, breakPolicies);
+const mandatoryBreak5hRule: Rule = ({ preset }) => {
+  const sched = deriveSchedule(preset);
   const FIVE_H = 5 * 60;
   const QUALIFYING_BREAK = 30;
 
@@ -117,8 +114,8 @@ const dailyWorkCapRule: Rule = ({ preset }) => {
   ];
 };
 
-const dailyPresenceCapRule: Rule = ({ preset, breakPolicies }) => {
-  const sched = deriveSchedule(preset, breakPolicies);
+const dailyPresenceCapRule: Rule = ({ preset }) => {
+  const sched = deriveSchedule(preset);
   if (sched.presenceMin <= 12 * 60) return [];
   return [
     {
