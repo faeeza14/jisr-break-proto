@@ -14,8 +14,26 @@ export const clampSpan = (s: Span, w: TimelineWindow): Span | null => {
   return end > start ? { start, end } : null;
 };
 
-export const computeWindow = (presetStart: number, presetEnd: number): TimelineWindow => {
-  const startMin = Math.min(presetStart, 6 * 60) - 30;
-  const endMin = Math.max(presetEnd, 18 * 60) + 30;
+/**
+ * Compute the visible timeline window. Defaults to a 6am–6pm canvas padded
+ * by 30 min on each side, then extended to fit:
+ *   - the shift body (presetStart..presetEnd)
+ *   - optional clocking bounds (so clock-in window before shift, clock-out
+ *     window after shift, and grace period don't get clipped — important
+ *     for night-shift presets)
+ */
+export const computeWindow = (
+  presetStart: number,
+  presetEnd: number,
+  clockingBounds?: { earliestMin: number; latestMin: number },
+): TimelineWindow => {
+  const candidatesStart = [presetStart, 6 * 60];
+  const candidatesEnd = [presetEnd, 18 * 60];
+  if (clockingBounds) {
+    candidatesStart.push(clockingBounds.earliestMin);
+    candidatesEnd.push(clockingBounds.latestMin);
+  }
+  const startMin = Math.min(...candidatesStart) - 30;
+  const endMin = Math.max(...candidatesEnd) + 30;
   return { startMin, endMin };
 };

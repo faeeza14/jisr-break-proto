@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { nanoid } from 'nanoid';
-import { ArrowUpRight, ChevronDown, CheckCircle2, History, Pencil, Plus, ShieldAlert } from 'lucide-react';
+import { ArrowUpRight, ChevronDown, CheckCircle2, History, Lock, MapPin, Pencil, Plus, ShieldAlert } from 'lucide-react';
 
 import {
   PageHeader,
@@ -375,8 +375,44 @@ export const PresetDetail = () => {
                   showHeatBan={heatBanActive}
                   showViolations={showViolations}
                   flexibleBreaks={flexibleBreaksRender}
+                  clocking={{
+                    clockInWindowStart: preset.clockInWindowStart,
+                    clockInWindowEnd: preset.clockInWindowEnd,
+                    clockOutWindowStart: preset.clockOutWindowStart,
+                    clockOutWindowEnd: preset.clockOutWindowEnd,
+                    clockInGraceMinutes: preset.clockInGraceMinutes,
+                  }}
                 />
-                <TimelineLegend showHeatBan={heatBanActive} showViolation={showViolations} />
+                <TimelineLegend
+                  showHeatBan={heatBanActive}
+                  showViolation={showViolations}
+                  showClocking
+                />
+                {(preset.geofenceRequired || preset.ipRestricted) && (
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <span className="text-11 uppercase tracking-[0.08em] text-app-faint dark:text-app-faint-dark font-medium">
+                      Restrictions
+                    </span>
+                    {preset.geofenceRequired && (
+                      <Tag
+                        appearance="info"
+                        size="sm"
+                        leadingIcon={<MapPin className="size-3" />}
+                      >
+                        Geofence · {preset.geofenceRadiusMeters ?? 100} m
+                      </Tag>
+                    )}
+                    {preset.ipRestricted && (
+                      <Tag
+                        appearance="info"
+                        size="sm"
+                        leadingIcon={<Lock className="size-3" />}
+                      >
+                        Office IPs only
+                      </Tag>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
@@ -698,6 +734,7 @@ export const PresetDetail = () => {
         open={breakSheet.open}
         onClose={() => setBreakSheet({ open: false, editing: null })}
         initial={breakSheet.editing}
+        preset={preset}
         onSave={onSaveBreak}
       />
       <OverrideModal

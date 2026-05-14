@@ -1,19 +1,23 @@
 /**
- * R1 BreakSheet — fully inline break editor.
- * Break time has no reusable policy in R1; every field lives directly on
- * the BreakInstance attached to the parent ShiftPreset.
+ * R1 BreakSheet — fully inline break editor with a live mini-preview
+ * of the parent shift at the top, so the user can see exactly where
+ * the in-progress break lands as they edit duration / schedule.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { nanoid } from 'nanoid';
 import { Button, Field, Input, NumberInput, Switch, Separator } from '@jisr-hr/ds-web';
-import type { BreakInstance, BreakScheduleType } from '../types';
+import type { BreakInstance, BreakScheduleType, ShiftPreset } from '../types';
+import { deriveSchedule } from '../lib/segments';
+import { Timeline } from './timeline/Timeline';
 
 type Props = {
   open: boolean;
   onClose: () => void;
   onSave: (b: BreakInstance) => void;
   initial?: BreakInstance | null;
+  /** Parent preset — fuels the mini live preview at the top of the drawer */
+  preset: ShiftPreset;
 };
 
 const blank = (): BreakInstance => ({
@@ -40,12 +44,28 @@ const SCHEDULE_OPTIONS = [
   { value: 'anchored', label: 'Anchored' },
 ] as const;
 
-export const BreakSheet = ({ open, onClose, onSave, initial }: Props) => {
+export const BreakSheet = ({ open, onClose, onSave, initial, preset }: Props) => {
   const [draft, setDraft] = useState<BreakInstance>(initial ?? blank());
 
   useEffect(() => {
     if (open) setDraft(initial ?? blank());
   }, [open, initial]);
+
+  // Build a temp preset that has the draft break swapped in / appended,
+  // so the mini timeline can render exactly the shape the user is editing.
+  const tempPreset = useMemo<ShiftPreset>(() => {
+    const others = preset.breaks.filter((b) => b.id !== draft.id);
+    return { ...preset, breaks: [...others, draft] };
+  }, [preset, draft]);
+
+  const sched = useMemo(() => deriveSchedule(tempPreset), [tempPreset]);
+  const flexFromDraft = useMemo(
+    () =>
+      sched.breakInstants
+        .filter((bi) => bi.b.scheduleType === 'flexible')
+        .map((bi) => ({ b: bi.b, start: bi.start, end: bi.end })),
+    [sched],
+  );
 
   if (!open) return null;
 
@@ -133,6 +153,28 @@ export const BreakSheet = ({ open, onClose, onSave, initial }: Props) => {
             <X className="size-4" />
           </button>
         </header>
+
+        {/* Mini live preview — the draft break is highlighted as the user edits */}
+        <div className="px-5 py-3 border-b-hair border-app-line dark:border-app-line-dark bg-app-bg dark:bg-app-card-dark/40">
+          <p className="text-11 tracking-[0.08em] uppercase text-app-faint dark:text-app-faint-dark font-medium mb-2">
+            Live preview
+          </p>
+          <Timeline
+            schedule={sched}
+            showHeatBan={false}
+            showViolations={false}
+            flexibleBreaks={flexFromDraft}
+            clocking={{
+              clockInWindowStart: preset.clockInWindowStart,
+              clockInWindowEnd: preset.clockInWindowEnd,
+              clockOutWindowStart: preset.clockOutWindowStart,
+              clockOutWindowEnd: preset.clockOutWindowEnd,
+              clockInGraceMinutes: preset.clockInGraceMinutes,
+            }}
+            highlightBreakId={draft.id}
+            compact
+          />
+        </div>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
           <Field label="Name" required>
