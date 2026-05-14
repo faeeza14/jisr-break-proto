@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main, r1]
+    branches: [main, r1, edge-cases]
   workflow_dispatch:
 
 permissions:
@@ -14,10 +14,12 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
-# Combined deploy: every push to main or r1 rebuilds BOTH branches and
-# publishes them together so designers can review both side by side:
-#   main → https://faeeza14.github.io/jisr-break-proto/        (product vision)
-#   r1   → https://faeeza14.github.io/jisr-break-proto/r1/     (release 1)
+# Combined deploy: every push to main, r1, or edge-cases rebuilds ALL THREE
+# branches and publishes them together so designers can review them side by
+# side at distinct URLs:
+#   main        → https://faeeza14.github.io/jisr-break-proto/            (product vision)
+#   r1          → https://faeeza14.github.io/jisr-break-proto/r1/         (release 1)
+#   edge-cases  → https://faeeza14.github.io/jisr-break-proto/edge-cases/ (edge-case gallery)
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -44,7 +46,7 @@ jobs:
           VITE_BASE_PATH: /jisr-break-proto/
         run: npm run build
 
-      # --- r1 build → main/dist/r1/ (combined into one artifact) ---
+      # --- r1 build → main/dist/r1/ ---
       - name: Checkout r1
         uses: actions/checkout@v4
         with:
@@ -62,6 +64,25 @@ jobs:
         run: |
           mkdir -p main/dist/r1
           cp -r r1/dist/. main/dist/r1/
+
+      # --- edge-cases build → main/dist/edge-cases/ ---
+      - name: Checkout edge-cases
+        uses: actions/checkout@v4
+        with:
+          ref: edge-cases
+          path: edge-cases
+      - name: Install (edge-cases)
+        working-directory: edge-cases
+        run: npm install --no-audit --no-fund --ignore-scripts
+      - name: Build (edge-cases)
+        working-directory: edge-cases
+        env:
+          VITE_BASE_PATH: /jisr-break-proto/edge-cases/
+        run: npm run build
+      - name: Merge edge-cases dist under /edge-cases
+        run: |
+          mkdir -p main/dist/edge-cases
+          cp -r edge-cases/dist/. main/dist/edge-cases/
 
       - uses: actions/upload-pages-artifact@v3
         with:

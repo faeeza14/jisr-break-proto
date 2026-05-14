@@ -219,6 +219,134 @@ export const shiftPresets: ShiftPreset[] = [
     overtimePolicyId: 'ot2',
     usedInTemplateIds: ['t4'],
   },
+
+  // ──────────────────────────────────────────────────────────────────
+  // 🧪 Edge-case demo presets — each is purpose-built to trigger a specific
+  // compliance / scheduling corner case for the EdgeCasesGallery showcase.
+  // They live alongside the 5 realistic presets above so the gallery can
+  // deep-link into the regular PresetDetail editor.
+  // ──────────────────────────────────────────────────────────────────
+
+  // 1) Cross-day night shift — exercises minute-math + display-wrap past midnight.
+  {
+    id: 'edge-cross-day',
+    nameEn: '🧪 Demo · Night cross-day',
+    nameAr: 'عرض · مناوبة ليلية تتجاوز منتصف الليل',
+    color: '#1F4F8E',
+    workEnvironment: 'mixed',
+    startTime: '22:00',
+    workDurationMinutes: 480, // 8h — ends 06:00 next day
+    breaks: [
+      {
+        id: 'bk-edge-cd-1',
+        name: 'Mid-shift break',
+        scheduleType: 'anchored',
+        anchoredOffsetMinutes: 240, // lands at 02:00 next day
+        durationMinutes: 30,
+        paid: 'paid',
+        countTowardWorkHours: false,
+        autoMandatePaidDuringHeatBan: false,
+        forceBreakAfter5h: true,
+      },
+    ],
+    ...FIELD_CLOCKING,
+    overtimePolicyId: 'ot2',
+    usedInTemplateIds: [],
+  },
+
+  // 2) Heat-ban collision — outdoor crew with the 30m break placed before
+  //    the heat ban window, so work runs 12:30–15:00 inside the 12:00–15:00
+  //    ban → hard `ksa.heat_ban` violation.
+  {
+    id: 'edge-heat-ban',
+    nameEn: '🧪 Demo · Heat-ban collision',
+    nameAr: 'عرض · تعارض مع حظر العمل في الحر',
+    color: '#D7991F',
+    workEnvironment: 'outdoor',
+    startTime: '09:00',
+    workDurationMinutes: 480, // 8h, ends 17:30 with 30m break
+    breaks: [
+      {
+        id: 'bk-edge-hb-1',
+        name: 'Lunch',
+        scheduleType: 'fixed',
+        fixedTime: '12:00',
+        durationMinutes: 30,
+        paid: 'unpaid',
+        countTowardWorkHours: false,
+        autoMandatePaidDuringHeatBan: false, // intentionally off — surfaces the violation
+        forceBreakAfter5h: true,
+      },
+    ],
+    ...FIELD_CLOCKING,
+    overtimePolicyId: 'ot1',
+    usedInTemplateIds: [],
+  },
+
+  // 3) Art. 101 5h-no-break — long shift with the break placed too late;
+  //    7 hours of continuous work before the first break → hard
+  //    `ksa.consecutive_5h` violation.
+  {
+    id: 'edge-art101',
+    nameEn: '🧪 Demo · 5h continuous work',
+    nameAr: 'عرض · 5 ساعات عمل متواصلة',
+    color: '#A32314',
+    workEnvironment: 'indoor',
+    startTime: '08:00',
+    workDurationMinutes: 540, // 9h, with one 30m break
+    breaks: [
+      {
+        id: 'bk-edge-101-1',
+        name: 'Lunch',
+        scheduleType: 'fixed',
+        fixedTime: '15:00', // 7h after start — too late
+        durationMinutes: 30,
+        paid: 'unpaid',
+        countTowardWorkHours: false,
+        autoMandatePaidDuringHeatBan: false,
+        forceBreakAfter5h: true,
+      },
+    ],
+    ...OFFICE_CLOCKING,
+    overtimePolicyId: 'ot2',
+    usedInTemplateIds: [],
+  },
+
+  // 4) 12h presence cap — 12h work + 90m lunch = 13.5h total presence,
+  //    exceeds Art. 98 → hard `ksa.presence_12h` violation.
+  {
+    id: 'edge-12h',
+    nameEn: '🧪 Demo · 12h+ presence cap',
+    nameAr: 'عرض · تجاوز سقف الحضور 12 ساعة',
+    color: '#7A2D6B',
+    workEnvironment: 'indoor',
+    startTime: '06:00',
+    workDurationMinutes: 720, // 12h work
+    breaks: [
+      {
+        id: 'bk-edge-12-1',
+        name: 'Lunch',
+        scheduleType: 'fixed',
+        fixedTime: '12:00',
+        durationMinutes: 90, // pushes presence to 13.5h
+        paid: 'unpaid',
+        countTowardWorkHours: false,
+        autoMandatePaidDuringHeatBan: false,
+        forceBreakAfter5h: true,
+      },
+    ],
+    // Custom clocking — early start needs an earlier clock-in window
+    clockInWindowStart: '05:30',
+    clockInWindowEnd: '07:00',
+    clockOutWindowStart: '19:00',
+    clockOutWindowEnd: '21:00',
+    clockInGraceMinutes: 10,
+    allowedShortageMinutes: 60,
+    geofenceRequired: false,
+    ipRestricted: true,
+    overtimePolicyId: 'ot2',
+    usedInTemplateIds: [],
+  },
 ];
 
 export const templates: ShiftTemplate[] = [

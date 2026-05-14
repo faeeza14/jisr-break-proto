@@ -9,6 +9,7 @@ import { Placeholder } from './pages/Placeholder';
 import { SchedulerPage } from './pages/SchedulerPage';
 import { NewPolicyPage } from './pages/NewPolicyPage';
 import { NewTemplatePage } from './pages/NewTemplatePage';
+import { EdgeCasesGallery } from './pages/EdgeCasesGallery';
 
 // Strip the trailing slash that Vite's BASE_URL always carries so React Router accepts it.
 const basename = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -30,6 +31,8 @@ const App = () => (
         <Route path="/settings/attendance/shifts/templates/new" element={<NewTemplatePage />} />
         <Route path="/settings/attendance/policies" element={<PoliciesPage />} />
         <Route path="/settings/attendance/policies/new" element={<NewPolicyPage />} />
+        {/* Edge-cases branch only — curated demo gallery */}
+        <Route path="/demo/edge-cases" element={<EdgeCasesGallery />} />
         {/* R1 — Break and Clock-in window are no longer reusable policies; configured per shift instead */}
         <Route
           path="/settings/attendance/policies/overtime/:id"

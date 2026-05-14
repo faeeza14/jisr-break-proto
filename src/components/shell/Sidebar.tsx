@@ -64,6 +64,7 @@ export const Sidebar = ({ onNavigate }: { onNavigate?: () => void }) => {
                 { label: 'Shifts & scheduling', to: '/settings/attendance/shifts' },
                 { label: 'Attendance policies', to: '/settings/attendance/policies' },
                 { label: 'Tracking methods', to: '/settings/attendance/tracking' },
+                { label: '🧪 Edge cases · Demo', to: '/demo/edge-cases' },
               ],
             },
             { label: 'Leave', icon: icon(<ClipboardList />) },
